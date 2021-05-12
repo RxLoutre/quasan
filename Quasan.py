@@ -128,18 +128,18 @@ def qc_illumina(reads,workdir):
 	except(subprocess.CalledProcessError):
 		print("Unable to run Fastqc.")
 		logging.info('Unable to run Fastqc.')
+		
+#def qc_assembly(assembly,workdir):
+	
+	
+def multiqc(workdir):
 	try:
 		cmd_multiqc = f"multiqc {workdir} -o {workdir}/multiqc"
 		res_multiqc = subprocess.check_output(cmd_multiqc, shell=True)
 	except(subprocess.CalledProcessError):
 		print("Unable to run Multiqc.")
 		logging.info('Unable to run Multiqc.')
-		
-def qc_assembly(assembly,workdir):
-	
-	
-def multiqc(workdir):
-    
+
 def main():
 	args = get_arguments()
 	#**************Reads parsing**************
