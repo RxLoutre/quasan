@@ -86,7 +86,7 @@ ______________________________________________________________________
                         help=argparse.SUPPRESS, required=False, default="Quasan.log")
     return (parser.parse_args())
  
-def parse_reads(logger,workdir):
+def parse_reads(workdir):
 	files = os.listdir(workdir)
 	reads = []
 	for read_file in files:
@@ -101,26 +101,35 @@ def parse_reads(logger,workdir):
 			logger.info('The file {} is not a fastq file.. But a {} file (⊙_☉)'.format(name,extension))
 	return reads
 	
-def assembly_illumina(logger,reads,workdir,tag):
+def assembly_illumina(reads,workdir,tag):
 	R1 = reads[0]
 	R2 = reads[1]
 	try:
 		cmd_assembly = f"shovill --outdir {workdir}/shovill --R1 {R1} --R2 {R2}"
-		res_assembly = subprocess.check_output(cmd_assembly, shell=True)
 		final_assembly = workdir + "/shovill/contigs.fa"
 		final_assembly_graph = workdir + "/shovill/contigs.gfa"
 		shovill_assembly = workdir + "/" + tag + "_shovill.fa"
 		shovill_assembly_graph = workdir + "/" + tag + "_shovill.gfa"
-		logger.info('Saving only usefull files.')
-		os.replace(final_assembly,shovill_assembly)
-		os.replace(final_assembly_graph,shovill_assembly_graph)
-		shutil.rmtree(workdir+"/shovill")
+		if not (os.path.isdir(workdir)):
+			logger.info('---------- Creating folder {}.'.format(workdir))
+			os.mkdir(workdir)
+		else:
+			logger.info('---------- Folder {} already existing, checking if assembly is inside.'.format(workdir))
+			if (os.path.isfile(final_assembly)):
+				logger.info('---------- The assembly {} already exist, skipping step.'.format(final_assembly))
+			else:
+				logger.info('---------- Expected file "{}" is not present, starting assembly process.'.format(final_assembly))
+				subprocess.check_output(cmd_assembly, shell=True)
+			logger.info('---------- Removing extra files and keeping only fasta files.')
+			os.replace(final_assembly,shovill_assembly)
+			os.replace(final_assembly_graph,shovill_assembly_graph)
+			shutil.rmtree(workdir+"/shovill")
 	except Exception as e:
 		logger.info('---------- Shovill ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
 		
-def qc_illumina(logger,reads,workdir):
+def qc_illumina(reads,workdir):
 	R1 = reads[0]
 	R2 = reads[1]
 	try:
@@ -131,17 +140,21 @@ def qc_illumina(logger,reads,workdir):
 		logger.error(e, exc_info=True)
 		raise
 		
-def qc_assembly(logger,assembly,workdir,tag):
+def qc_assembly(assembly,workdir,tag):
 	wdir_busco = workdir + "/busco"
 	wdir_quast = workdir + "/quast"
+	busco_dl = ressources_path + "/busco"
+	logger.info('---------- BUSCO STARTED ')
 	try:
 		busco_lineage = "streptomycetales_odb10"
-		cmd_busco = f"busco -i {assembly} -o {tag} --out_path {wdir_busco} -l {busco_lineage} -m geno -f"
+		cmd_busco = f"busco -i {assembly} -o {tag} --out_path {wdir_busco} -l {busco_lineage} -m geno --download_path {busco_dl} -f"
 		subprocess.check_output(cmd_busco, shell=True)
 	except Exception as e:
 		logger.info('---------- Busco ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
+	logger.info('---------- BUSCO DONE ')
+	logger.info('---------- QUAST STARTED ')
 	try:
 		cmd_quast = f"quast -o {wdir_quast} {assembly}"
 		subprocess.check_output(cmd_quast, shell=True)
@@ -149,8 +162,9 @@ def qc_assembly(logger,assembly,workdir,tag):
 		logger.info('---------- Quast ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
+	logger.info('---------- QUAST DONE ')
 
-def multiqc(logger,workdir):
+def multiqc(workdir):
 	try:
 		cmd_multiqc = f"multiqc {workdir} -o {workdir}/multiqc"
 		subprocess.check_output(cmd_multiqc, shell=True)
@@ -158,16 +172,19 @@ def multiqc(logger,workdir):
 		logger.info('---------- MultiQC ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
-
+#--------------------------------------MAIN----------------------------------------
 def main():
+	#----------------------Args and global------------------------
 	args = get_arguments()
 	#If args.indir = /my/path/STRAIN_XX, then tag = STRAIN_XX
 	tag = os.path.basename(args.indir)
-	#/!\ DEV : If several sequencing technology, adapt assembly step
+	global ressources_path
+	ressources_path = "/Users/roxaneboyer/Bioinformatic/ressources"
 	reads_folder = args.indir + "/raw-reads"
 	illumina_reads_folder = reads_folder + "/illumina"
 	#-----------------------Init logging--------------------------
 	try:
+		global logger
 		logger = logging.getLogger('quasan_logger')
 		logger.setLevel(logging.DEBUG)
 		fh = logging.FileHandler(args.logfile)
@@ -176,44 +193,36 @@ def main():
 		fh.setFormatter(formatter)
 		logger.addHandler(fh)
 	except:
-		print("No permissions to write the logs at {args.logfile}. Fine, no logs then :/")
-		raise # indicates that user has no write permission in this directory. No logs then
+		print("No permissions to write the logs at {}. Fine, no logs then :/".format(args.log))
+		pass # indicates that user has no write permission in this directory. No logs then
 	
 	logger.info('-------------------QUASAN - {}-----------------------'.format(tag))
 	logger.info('Started with arguments :')
 	logger.info('{} '.format(args))
 	#------------------------Reads parsing----------------------
-	reads = parse_reads(logger,illumina_reads_folder)
+	reads = parse_reads(illumina_reads_folder)
 
 	#-----------------------Quality check-----------------------
 	if args.qualitycheck:
-		logger.info('Starting QC procedure for {tag}')
+		logger.info('----- READS QC START')
 		reads_qc_dir = reads_folder + '/QC'
 		if not (os.path.isdir(reads_qc_dir)):
 			os.mkdir(reads_qc_dir)
 		qc_illumina(reads,reads_qc_dir)
-		logger.info('QC is over !')
+		logger.info('----- READS QC DONE')
 		
 	#-----------------------Assembly----------------------------
 	if args.assembly:
 		logger.info('----- ASSEMBLY START')
 		assembly_dir = args.indir + '/assembly'
 		assembly_file = assembly_dir + "/" + tag + "_shovill.fa"
-		if not (os.path.isdir(assembly_dir)):
-			logger.info('---------- Creating folder {}.'.format(assembly_dir))
-			os.mkdir(assembly_dir)
-		else:
-			logger.info('---------- Folder already existing, checking if assembly is nearby.')
-			if (os.path.isfile(assembly_file)):
-				logger.info('---------- The assembly {} already exist, skipping directly to QC.'.format(assembly_file))
-				qc_assembly(logger,assembly_file,assembly_dir,tag)
-			else:
-				logger.info('---------- Expected file "{}" is not present, starting assembly process.'.format(assembly_file))
-				assembly_illumina(reads,assembly_dir,tag)
-				qc_assembly(assembly_file,assembly_dir,tag)
+		assembly_illumina(reads,assembly_dir,tag)
 		logger.info('----- ASSEMBLY DONE')
+		logger.info('----- ASSEMBLY QC STARTED ')
+		qc_assembly(assembly_file,assembly_dir,tag)
+		logger.info('----- ASSEMBLY QC DONE ')
 			
-	logger.info('Quasan has ended  (•̀ᴗ•́)و')
+	logger.info('----------------------Quasan has ended  (•̀ᴗ•́)و -------------------' )
 
 if __name__ == '__main__':
     main()
