@@ -192,7 +192,7 @@ def main():
 		if args.assembly:
 			logging.info('Starting assembly step process for {}'.format(tag))
 			assembly_dir = args.indir + '/assembly'
-			assembly_file = assembly_dir + tag + "_shovill.fa"
+			assembly_file = assembly_dir + "/" + tag + "_shovill.fa"
 			if not (os.path.isdir(assembly_dir)):
 				logging.info('Creating folder {assembly_dir}.')
 				os.mkdir(assembly_dir)
