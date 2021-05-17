@@ -168,17 +168,23 @@ def main():
 	reads_folder = args.indir + "/raw-reads"
 	illumina_reads_folder = reads_folder + "/illumina"
 	reads = parse_reads(illumina_reads_folder)
+	log = args.logfile
+	print ("--------Init logging----------")
+	print ("Using : ",log)
 	try:
-		logging.basicConfig(
-			format='%(asctime)s %(message)s',
-			filename=args.logfile,
-			level=logging.DEBUG)
-	except PermissionError:
-		print("No permissions to write the logs at {args.log}. Fine, no logs then :/")
-		pass  # indicates that user has no write permission in this directory. No logs then
+		logger = logging.getLogger('quasan_logger')
+		logger.setLevel(logging.DEBUG)
+		fh = logging.FileHandler(args.logfile)
+		fh.setLevel(logging.DEBUG)
+		formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+		fh.setFormatter(formatter)
+		logger.addHandler(fh)
+	except:
+		print("No permissions to write the logs at {args.logfile}. Fine, no logs then :/")
+		raise # indicates that user has no write permission in this directory. No logs then
 	try:
-		logging.info('-------------------------------------------------------')
-		logging.info('QuAsAn started with arguments {args}')
+		logger.info('-------------------------------------------------------')
+		logger.info('QuAsAn started with arguments {args}')
 		#**************Quality check**************
 		if args.qualitycheck:
 			logging.info('Starting QC procedure for {tag}')
