@@ -86,7 +86,7 @@ ______________________________________________________________________
                         help=argparse.SUPPRESS, required=False, default="Quasan.log")
     return (parser.parse_args())
  
-def parse_reads(workdir):
+def parse_reads(logger,workdir):
 	files = os.listdir(workdir)
 	reads = []
 	for read_file in files:
@@ -94,14 +94,14 @@ def parse_reads(workdir):
 		if(extension == '.gz'):
 			name, extension = os.path.splitext(name)
 		if(extension == '.fastq' or extension == '.fq'):
-			logging.info('Found fastq file : {}'.format(read_file))
+			logger.info('Found fastq file : {}'.format(read_file))
 			read_path = workdir + '/' + read_file
 			reads.append(read_path)
 		else:
-			logging.info('The file {} is not a fastq file.. But a {} file (⊙_☉)'.format(name,extension))
+			logger.info('The file {} is not a fastq file.. But a {} file (⊙_☉)'.format(name,extension))
 	return reads
 	
-def assembly_illumina(reads,workdir,tag):
+def assembly_illumina(logger,reads,workdir,tag):
 	R1 = reads[0]
 	R2 = reads[1]
 	try:
@@ -111,27 +111,27 @@ def assembly_illumina(reads,workdir,tag):
 		final_assembly_graph = workdir + "/shovill/contigs.gfa"
 		shovill_assembly = workdir + "/" + tag + "_shovill.fa"
 		shovill_assembly_graph = workdir + "/" + tag + "_shovill.gfa"
-		logging.info('Saving only usefull files.')
+		logger.info('Saving only usefull files.')
 		os.replace(final_assembly,shovill_assembly)
 		os.replace(final_assembly_graph,shovill_assembly_graph)
 		shutil.rmtree(workdir+"/shovill")
 	except Exception as e:
-		logging.info('Shovill ended unexpectedly :( ')
-		logging.error(e, exc_info=True)
+		logger.info('Shovill ended unexpectedly :( ')
+		logger.error(e, exc_info=True)
 		raise
 		
-def qc_illumina(reads,workdir):
+def qc_illumina(logger,reads,workdir):
 	R1 = reads[0]
 	R2 = reads[1]
 	try:
 		cmd_fastqc = f"fastqc {R1} {R2} -o {workdir} -t 16"
 		res_fastqc = subprocess.check_output(cmd_fastqc, shell=True)
 	except Exception as e:
-		logging.info('FastQC ended unexpectedly :( ')
-		logging.error(e, exc_info=True)
+		logger.info('FastQC ended unexpectedly :( ')
+		logger.error(e, exc_info=True)
 		raise
 		
-def qc_assembly(assembly,workdir,tag):
+def qc_assembly(logger,assembly,workdir,tag):
 	wdir_busco = workdir + "/busco"
 	wdir_quast = workdir + "/quast"
 	try:
@@ -139,24 +139,24 @@ def qc_assembly(assembly,workdir,tag):
 		cmd_busco = f"busco -i {assembly} -o {tag} --out_path {wdir_busco} -l {busco_lineage} -m geno"
 		res_busco = subprocess.check_output(cmd_busco, shell=True)
 	except Exception as e:
-		logging.info('Busco ended unexpectedly :( ')
-		logging.error(e, exc_info=True)
+		logger.info('Busco ended unexpectedly :( ')
+		logger.error(e, exc_info=True)
 		raise
 	try:
 		cmd_quast = f"quast -o {wdir_quast} {assembly}"
 		res_quast = subprocess.check_output(cmd_quast, shell=True)
 	except Exception as e:
-		logging.info('Quast ended unexpectedly :( ')
-		logging.error(e, exc_info=True)
+		logger.info('Quast ended unexpectedly :( ')
+		logger.error(e, exc_info=True)
 		raise
 
-def multiqc(workdir):
+def multiqc(logger,workdir):
 	try:
 		cmd_multiqc = f"multiqc {workdir} -o {workdir}/multiqc"
 		res_multiqc = subprocess.check_output(cmd_multiqc, shell=True)
 	except Exception as e:
-		logging.info('MultiQC ended unexpectedly :( ')
-		logging.error(e, exc_info=True)
+		logger.info('MultiQC ended unexpectedly :( ')
+		logger.error(e, exc_info=True)
 		raise
 
 def main():
@@ -167,10 +167,7 @@ def main():
 	#/!\ DEV : If several sequencing technology, adapt assembly step
 	reads_folder = args.indir + "/raw-reads"
 	illumina_reads_folder = reads_folder + "/illumina"
-	reads = parse_reads(illumina_reads_folder)
-	log = args.logfile
-	print ("--------Init logging----------")
-	print ("Using : ",log)
+	#-----------------------Init logging--------------------------
 	try:
 		logger = logging.getLogger('quasan_logger')
 		logger.setLevel(logging.DEBUG)
@@ -182,40 +179,42 @@ def main():
 	except:
 		print("No permissions to write the logs at {args.logfile}. Fine, no logs then :/")
 		raise # indicates that user has no write permission in this directory. No logs then
+	
+	reads = parse_reads(logger,illumina_reads_folder)
 	try:
 		logger.info('-------------------------------------------------------')
-		logger.info('QuAsAn started with arguments {args}')
+		logger.info('Quasan started with arguments {} '.format(args))
 		#**************Quality check**************
 		if args.qualitycheck:
-			logging.info('Starting QC procedure for {tag}')
+			logger.info('Starting QC procedure for {tag}')
 			reads_qc_dir = reads_folder + '/QC'
 			if not (os.path.isdir(reads_qc_dir)):
 				os.mkdir(reads_qc_dir)
 			qc_illumina(reads,reads_qc_dir)
-			logging.info('QC is over !')
+			logger.info('QC is over !')
 			
 		#**************   Assembly	**************
 		if args.assembly:
-			logging.info('Starting assembly step process for {tag}')
+			logger.info('Starting assembly step process for {tag}')
 			assembly_dir = args.indir + '/assembly'
 			assembly_file = assembly_dir + "/" + tag + "_shovill.fa"
 			if not (os.path.isdir(assembly_dir)):
-				logging.info('Creating folder {assembly_dir}.')
+				logger.info('Creating folder {assembly_dir}.')
 				os.mkdir(assembly_dir)
 			else:
-				logging.info('Folder already existing, checking if assembly is nearby.')
+				logger.info('Folder already existing, checking if assembly is nearby.')
 				if (os.path.isfile(assembly_file)):
-					logging.info('The assembly for strain {tag} already exist, skipping assembly step.')
+					logger.info('The assembly for strain {tag} already exist, skipping assembly step.')
 					qc_assembly(assembly_file,assembly_dir,tag)
 				else:
-					logging.info('Epected file "{assembly_file}" is not present, starting assembly process.')
+					logger.info('Epected file "{assembly_file}" is not present, starting assembly process.')
 					assembly_illumina(reads,assembly_dir,tag)
 					qc_assembly(assembly_file,assembly_dir,tag)
-			logging.info('Assembly step is over !')
+			logger.info('Assembly step is over !')
 			
-		logging.info('QuAsAn has ended  (•̀ᴗ•́)و')
+		logger.info('QuAsAn has ended  (•̀ᴗ•́)و')
 	except Exception as e:
-		logging.error(e, exc_info=True)
+		logger.error(e, exc_info=True)
 		raise
 
 if __name__ == '__main__':
