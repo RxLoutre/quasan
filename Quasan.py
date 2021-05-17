@@ -105,7 +105,7 @@ def assembly_illumina(reads,workdir,tag):
 	R1 = reads[0]
 	R2 = reads[1]
 	try:
-		cmd_assembly = f"shovill --outdir {workdir}/shovill --R1 {R1} --R2 {R2} --force"
+		cmd_assembly = f"shovill --outdir {workdir}/shovill --R1 {R1} --R2 {R2}"
 		res_assembly = subprocess.check_output(cmd_assembly, shell=True)
 		final_assembly = workdir + "/shovill/contigs.fa"
 		final_assembly_graph = workdir + "/shovill/contigs.gfa"
@@ -123,15 +123,21 @@ def qc_illumina(reads,workdir):
 	R1 = reads[0]
 	R2 = reads[1]
 	try:
-		cmd_fastqc = f"fastqc {R1} {R2} -o {workdir}"
+		cmd_fastqc = f"fastqc {R1} {R2} -o {workdir} -t 16"
 		res_fastqc = subprocess.check_output(cmd_fastqc, shell=True)
 	except(subprocess.CalledProcessError):
 		print("Unable to run Fastqc.")
 		logging.info('Unable to run Fastqc.')
 		
-#def qc_assembly(assembly,workdir):
-	
-	
+def qc_assembly(assembly,workdir,tag):
+	try:
+		busco_lineage = "streptomycetales_odb10"
+		cmd_busco = f"busco -i {assembly} -o {tag} --out_path {workdir} -l {busco_lineage} -m geno"
+		res_busco = subprocess.check_output(cmd_busco, shell=True)
+	except:
+		print("Unable to run Busco.")
+		logging.info('Unable to run Busco.')
+
 def multiqc(workdir):
 	try:
 		cmd_multiqc = f"multiqc {workdir} -o {workdir}/multiqc"
