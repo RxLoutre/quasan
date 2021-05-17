@@ -172,16 +172,16 @@ def main():
 		logging.basicConfig(
 			format='%(asctime)s %(message)s',
 			filename=args.logfile,
-			level=logging.INFO)
+			level=logging.DEBUG)
 	except PermissionError:
 		print("No permissions to write the logs at {args.log}. Fine, no logs then :/")
 		pass  # indicates that user has no write permission in this directory. No logs then
 	try:
-		logging.info('-------------------------------------------------------'.format(args))
-		logging.info('QuAsAn started with arguments {}'.format(args))
+		logging.info('-------------------------------------------------------')
+		logging.info('QuAsAn started with arguments {args}')
 		#**************Quality check**************
 		if args.qualitycheck:
-			logging.info('Starting QC procedure for {}'.format(tag))
+			logging.info('Starting QC procedure for {tag}')
 			reads_qc_dir = reads_folder + '/QC'
 			if not (os.path.isdir(reads_qc_dir)):
 				os.mkdir(reads_qc_dir)
@@ -190,7 +190,7 @@ def main():
 			
 		#**************   Assembly	**************
 		if args.assembly:
-			logging.info('Starting assembly step process for {}'.format(tag))
+			logging.info('Starting assembly step process for {tag}')
 			assembly_dir = args.indir + '/assembly'
 			assembly_file = assembly_dir + "/" + tag + "_shovill.fa"
 			if not (os.path.isdir(assembly_dir)):
