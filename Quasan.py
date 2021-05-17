@@ -51,7 +51,7 @@ Options:
         by Quast and BUSCO (bacteria) to assess the homemade assembly.
     -an Create a directory named "annotation" inside the input directory
         and perform an annotation step using Prokka. Output will produce
-        a GBK file that can be used for BCG discovery.
+        a GFF3 file that can be used for BCG discovery with AS.
         /!\ Works only if an "assembly" directory exists and contain a
         fasta file.
     -q  Create a directory named "quality-check" inside the raw-reads
@@ -115,9 +115,10 @@ def assembly_illumina(reads,workdir,tag):
 		os.replace(final_assembly,shovill_assembly)
 		os.replace(final_assembly_graph,shovill_assembly_graph)
 		shutil.rmtree(workdir+"/shovill")
-	except(subprocess.CalledProcessError):
-		print("Shovill ended unexpectedly :( ")
+	except Exception as e:
 		logging.info('Shovill ended unexpectedly :( ')
+		logging.error(e, exc_info=True)
+		raise
 		
 def qc_illumina(reads,workdir):
 	R1 = reads[0]
@@ -125,26 +126,38 @@ def qc_illumina(reads,workdir):
 	try:
 		cmd_fastqc = f"fastqc {R1} {R2} -o {workdir} -t 16"
 		res_fastqc = subprocess.check_output(cmd_fastqc, shell=True)
-	except(subprocess.CalledProcessError):
-		print("Unable to run Fastqc.")
-		logging.info('Unable to run Fastqc.')
+	except Exception as e:
+		logging.info('FastQC ended unexpectedly :( ')
+		logging.error(e, exc_info=True)
+		raise
 		
 def qc_assembly(assembly,workdir,tag):
+	wdir_busco = workdir + "/busco"
+	wdir_quast = workdir + "/quast"
 	try:
 		busco_lineage = "streptomycetales_odb10"
-		cmd_busco = f"busco -i {assembly} -o {tag} --out_path {workdir} -l {busco_lineage} -m geno"
+		cmd_busco = f"busco -i {assembly} -o {tag} --out_path {wdir_busco} -l {busco_lineage} -m geno"
 		res_busco = subprocess.check_output(cmd_busco, shell=True)
-	except:
-		print("Unable to run Busco.")
-		logging.info('Unable to run Busco.')
+	except Exception as e:
+		logging.info('Busco ended unexpectedly :( ')
+		logging.error(e, exc_info=True)
+		raise
+	try:
+		cmd_quast = f"quast -o {wdir_quast} {assembly}"
+		res_quast = subprocess.check_output(cmd_quast, shell=True)
+	except Exception as e:
+		logging.info('Quast ended unexpectedly :( ')
+		logging.error(e, exc_info=True)
+		raise
 
 def multiqc(workdir):
 	try:
 		cmd_multiqc = f"multiqc {workdir} -o {workdir}/multiqc"
 		res_multiqc = subprocess.check_output(cmd_multiqc, shell=True)
-	except(subprocess.CalledProcessError):
-		print("Unable to run Multiqc.")
-		logging.info('Unable to run Multiqc.')
+	except Exception as e:
+		logging.info('MultiQC ended unexpectedly :( ')
+		logging.error(e, exc_info=True)
+		raise
 
 def main():
 	args = get_arguments()
@@ -161,6 +174,7 @@ def main():
 			filename=args.logfile,
 			level=logging.INFO)
 	except PermissionError:
+		print("No permissions to write the logs at {args.log}. Fine, no logs then :/")
 		pass  # indicates that user has no write permission in this directory. No logs then
 	try:
 		logging.info('-------------------------------------------------------'.format(args))
