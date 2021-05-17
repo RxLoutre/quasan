@@ -116,7 +116,7 @@ def assembly_illumina(logger,reads,workdir,tag):
 		os.replace(final_assembly_graph,shovill_assembly_graph)
 		shutil.rmtree(workdir+"/shovill")
 	except Exception as e:
-		logger.info('Shovill ended unexpectedly :( ')
+		logger.info('---------- Shovill ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
 		
@@ -125,9 +125,9 @@ def qc_illumina(logger,reads,workdir):
 	R2 = reads[1]
 	try:
 		cmd_fastqc = f"fastqc {R1} {R2} -o {workdir} -t 16"
-		res_fastqc = subprocess.check_output(cmd_fastqc, shell=True)
+		subprocess.check_output(cmd_fastqc, shell=True)
 	except Exception as e:
-		logger.info('FastQC ended unexpectedly :( ')
+		logger.info('---------- FastQC ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
 		
@@ -136,32 +136,31 @@ def qc_assembly(logger,assembly,workdir,tag):
 	wdir_quast = workdir + "/quast"
 	try:
 		busco_lineage = "streptomycetales_odb10"
-		cmd_busco = f"busco -i {assembly} -o {tag} --out_path {wdir_busco} -l {busco_lineage} -m geno"
-		res_busco = subprocess.check_output(cmd_busco, shell=True)
+		cmd_busco = f"busco -i {assembly} -o {tag} --out_path {wdir_busco} -l {busco_lineage} -m geno -f"
+		subprocess.check_output(cmd_busco, shell=True)
 	except Exception as e:
-		logger.info('Busco ended unexpectedly :( ')
+		logger.info('---------- Busco ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
 	try:
 		cmd_quast = f"quast -o {wdir_quast} {assembly}"
-		res_quast = subprocess.check_output(cmd_quast, shell=True)
+		subprocess.check_output(cmd_quast, shell=True)
 	except Exception as e:
-		logger.info('Quast ended unexpectedly :( ')
+		logger.info('---------- Quast ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
 
 def multiqc(logger,workdir):
 	try:
 		cmd_multiqc = f"multiqc {workdir} -o {workdir}/multiqc"
-		res_multiqc = subprocess.check_output(cmd_multiqc, shell=True)
+		subprocess.check_output(cmd_multiqc, shell=True)
 	except Exception as e:
-		logger.info('MultiQC ended unexpectedly :( ')
+		logger.info('---------- MultiQC ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
 
 def main():
 	args = get_arguments()
-	#**************Reads parsing**************
 	#If args.indir = /my/path/STRAIN_XX, then tag = STRAIN_XX
 	tag = os.path.basename(args.indir)
 	#/!\ DEV : If several sequencing technology, adapt assembly step
@@ -180,42 +179,41 @@ def main():
 		print("No permissions to write the logs at {args.logfile}. Fine, no logs then :/")
 		raise # indicates that user has no write permission in this directory. No logs then
 	
+	logger.info('-------------------QUASAN - {}-----------------------'.format(tag))
+	logger.info('Started with arguments :')
+	logger.info('{} '.format(args))
+	#------------------------Reads parsing----------------------
 	reads = parse_reads(logger,illumina_reads_folder)
-	try:
-		logger.info('-------------------------------------------------------')
-		logger.info('Quasan started with arguments {} '.format(args))
-		#**************Quality check**************
-		if args.qualitycheck:
-			logger.info('Starting QC procedure for {tag}')
-			reads_qc_dir = reads_folder + '/QC'
-			if not (os.path.isdir(reads_qc_dir)):
-				os.mkdir(reads_qc_dir)
-			qc_illumina(reads,reads_qc_dir)
-			logger.info('QC is over !')
-			
-		#**************   Assembly	**************
-		if args.assembly:
-			logger.info('Starting assembly step process for {tag}')
-			assembly_dir = args.indir + '/assembly'
-			assembly_file = assembly_dir + "/" + tag + "_shovill.fa"
-			if not (os.path.isdir(assembly_dir)):
-				logger.info('Creating folder {assembly_dir}.')
-				os.mkdir(assembly_dir)
+
+	#-----------------------Quality check-----------------------
+	if args.qualitycheck:
+		logger.info('Starting QC procedure for {tag}')
+		reads_qc_dir = reads_folder + '/QC'
+		if not (os.path.isdir(reads_qc_dir)):
+			os.mkdir(reads_qc_dir)
+		qc_illumina(reads,reads_qc_dir)
+		logger.info('QC is over !')
+		
+	#-----------------------Assembly----------------------------
+	if args.assembly:
+		logger.info('----- ASSEMBLY START')
+		assembly_dir = args.indir + '/assembly'
+		assembly_file = assembly_dir + "/" + tag + "_shovill.fa"
+		if not (os.path.isdir(assembly_dir)):
+			logger.info('---------- Creating folder {}.'.format(assembly_dir))
+			os.mkdir(assembly_dir)
+		else:
+			logger.info('---------- Folder already existing, checking if assembly is nearby.')
+			if (os.path.isfile(assembly_file)):
+				logger.info('---------- The assembly {} already exist, skipping directly to QC.'.format(assembly_file))
+				qc_assembly(logger,assembly_file,assembly_dir,tag)
 			else:
-				logger.info('Folder already existing, checking if assembly is nearby.')
-				if (os.path.isfile(assembly_file)):
-					logger.info('The assembly for strain {tag} already exist, skipping assembly step.')
-					qc_assembly(assembly_file,assembly_dir,tag)
-				else:
-					logger.info('Epected file "{assembly_file}" is not present, starting assembly process.')
-					assembly_illumina(reads,assembly_dir,tag)
-					qc_assembly(assembly_file,assembly_dir,tag)
-			logger.info('Assembly step is over !')
+				logger.info('---------- Expected file "{}" is not present, starting assembly process.'.format(assembly_file))
+				assembly_illumina(reads,assembly_dir,tag)
+				qc_assembly(assembly_file,assembly_dir,tag)
+		logger.info('----- ASSEMBLY DONE')
 			
-		logger.info('QuAsAn has ended  (•̀ᴗ•́)و')
-	except Exception as e:
-		logger.error(e, exc_info=True)
-		raise
+	logger.info('Quasan has ended  (•̀ᴗ•́)و')
 
 if __name__ == '__main__':
     main()
