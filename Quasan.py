@@ -115,15 +115,15 @@ def assembly_illumina(reads,workdir,tag):
 			os.mkdir(workdir)
 		else:
 			logger.info('---------- Folder {} already existing, checking if assembly is inside.'.format(workdir))
-			if (os.path.isfile(final_assembly)):
-				logger.info('---------- The assembly {} already exist, skipping step.'.format(final_assembly))
+			if (os.path.isfile(shovill_assembly)):
+				logger.info('---------- The assembly {} already exist, skipping step.'.format(shovill_assembly))
 			else:
-				logger.info('---------- Expected file "{}" is not present, starting assembly process.'.format(final_assembly))
+				logger.info('---------- Expected file "{}" is not present, starting assembly process.'.format(shovill_assembly))
 				subprocess.check_output(cmd_assembly, shell=True)
-			logger.info('---------- Removing extra files and keeping only fasta files.')
-			os.replace(final_assembly,shovill_assembly)
-			os.replace(final_assembly_graph,shovill_assembly_graph)
-			shutil.rmtree(workdir+"/shovill")
+				logger.info('---------- Removing extra files and keeping only fasta files.')
+				os.replace(final_assembly,shovill_assembly)
+				os.replace(final_assembly_graph,shovill_assembly_graph)
+				shutil.rmtree(workdir+"/shovill")
 	except Exception as e:
 		logger.info('---------- Shovill ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
