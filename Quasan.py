@@ -190,13 +190,22 @@ def main():
 			
 		#**************   Assembly	**************
 		if args.assembly:
-			logging.info('Starting assembly process for {}'.format(tag))
+			logging.info('Starting assembly step process for {}'.format(tag))
 			assembly_dir = args.indir + '/assembly'
+			assembly_file = assembly_dir + tag + "_shovill.fa"
 			if not (os.path.isdir(assembly_dir)):
-				logging.info('Creating folder "assembly".')
+				logging.info('Creating folder {assembly_dir}.')
 				os.mkdir(assembly_dir)
-			assembly_illumina(reads,assembly_dir,tag)
-			logging.info('Assembly is over !')
+			else:
+				logging.info('Folder already existing, checking if assembly is nearby.')
+				if (os.path.isfile(assembly_file)):
+					logging.info('The assembly for strain {tag} already exist, skipping assembly step.')
+					qc_assembly(assembly_file,assembly_dir,tag)
+				else:
+					logging.info('Epected file "{assembly_file}" is not present, starting assembly process.')
+					assembly_illumina(reads,assembly_dir,tag)
+					qc_assembly(assembly_file,assembly_dir,tag)
+			logging.info('Assembly step is over !')
 			
 		logging.info('QuAsAn has ended  (•̀ᴗ•́)و')
 	except Exception as e:
