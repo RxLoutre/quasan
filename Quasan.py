@@ -197,13 +197,13 @@ def main():
 	tag = os.path.basename(args.indir)
 	global ressources_path
 	ressources_path = "/Users/roxaneboyer/Bioinformatic/ressources"
+	global busco_lineage
+	busco_lineage = "streptomycetales_odb10"
 	reads_folder = args.indir + "/raw-reads"
 	illumina_reads_folder = reads_folder + "/illumina"
 	#-----------------------Init logging--------------------------
 	try:
 		global logger
-		global busco_lineage
-		busco_lineage = "streptomycetales_odb10"
 		logger = logging.getLogger('quasan_logger')
 		logger.setLevel(logging.DEBUG)
 		fh = logging.FileHandler(args.logfile)
