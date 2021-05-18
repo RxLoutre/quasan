@@ -143,10 +143,10 @@ def qc_illumina(reads,workdir):
 def qc_assembly(assembly,workdir,tag):
 	wdir_busco = workdir + "/busco"
 	wdir_quast = workdir + "/quast"
+	wdir_general = workdir + "/eval"
 	busco_dl = ressources_path + "/busco"
 	logger.info('---------- BUSCO STARTED ')
 	try:
-		busco_lineage = "streptomycetales_odb10"
 		cmd_busco = f"busco -i {assembly} -o {tag} --out_path {wdir_busco} -l {busco_lineage} -m geno --download_path {busco_dl} -f"
 		subprocess.check_output(cmd_busco, shell=True)
 	except Exception as e:
@@ -163,6 +163,21 @@ def qc_assembly(assembly,workdir,tag):
 		logger.error(e, exc_info=True)
 		raise
 	logger.info('---------- QUAST DONE ')
+	logger.info('---------- Gathering essential results files')
+	if (not os.path.isdir(wdir_general)):
+		logger.info('---------- Creating folder {} .'.format(wdir_general))
+	busco_resume_file = wdir_busco + "/" + tag + "/short_summary.specific." + busco_lineage + "." + tag + ".txt"
+	quast_html = wdir_quast + "/report.html"
+	quast_tsv = wdir_quast + "/report.tsv"
+	busco_resume_file_final = wdir_general + "/" + tag + "/short_summary.specific." + busco_lineage + "." + tag + ".txt"
+	quast_html_final = wdir_general + "/report.html"
+	quast_tsv_final = wdir_general + "/report.tsv"
+	os.replace(busco_resume_file,busco_resume_file_final)
+	os.replace(quast_html,quast_html_final)
+	os.replace(quast_tsv,quast_tsv_final)
+	logger.info('---------- Removing extra files.')
+	shutil.rmtree(wdir_busco)
+	shutil.rmtree(wdir_quast)
 
 def multiqc(workdir):
 	try:
@@ -185,6 +200,8 @@ def main():
 	#-----------------------Init logging--------------------------
 	try:
 		global logger
+		global busco_lineage
+		busco_lineage = "streptomycetales_odb10"
 		logger = logging.getLogger('quasan_logger')
 		logger.setLevel(logging.DEBUG)
 		fh = logging.FileHandler(args.logfile)
