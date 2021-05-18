@@ -166,10 +166,11 @@ def qc_assembly(assembly,workdir,tag):
 	logger.info('---------- Gathering essential results files')
 	if (not os.path.isdir(wdir_general)):
 		logger.info('---------- Creating folder {} .'.format(wdir_general))
+		os.mkdir(wdir_general)
 	busco_resume_file = wdir_busco + "/" + tag + "/short_summary.specific." + busco_lineage + "." + tag + ".txt"
 	quast_html = wdir_quast + "/report.html"
 	quast_tsv = wdir_quast + "/report.tsv"
-	busco_resume_file_final = wdir_general + "/" + tag + "/short_summary.specific." + busco_lineage + "." + tag + ".txt"
+	busco_resume_file_final = wdir_general + "/short_summary.specific." + busco_lineage + "." + tag + ".txt"
 	quast_html_final = wdir_general + "/report.html"
 	quast_tsv_final = wdir_general + "/report.tsv"
 	os.replace(busco_resume_file,busco_resume_file_final)
@@ -180,6 +181,7 @@ def qc_assembly(assembly,workdir,tag):
 	shutil.rmtree(wdir_quast)
 
 def multiqc(workdir):
+	
 	try:
 		cmd_multiqc = f"multiqc {workdir} -o {workdir}/multiqc"
 		subprocess.check_output(cmd_multiqc, shell=True)
