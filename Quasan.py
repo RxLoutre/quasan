@@ -130,11 +130,11 @@ def assembly_illumina(reads,workdir,tag):
 		logger.error(e, exc_info=True)
 		raise
 		
-def qc_illumina(reads,workdir):
+def qc_illumina(reads):
 	R1 = reads[0]
 	R2 = reads[1]
 	try:
-		cmd_fastqc = f"fastqc {R1} {R2} -o {workdir} -t 16"
+		cmd_fastqc = f"fastqc {R1} {R2} -o {multiqc_dir} -t 16"
 		subprocess.check_output(cmd_fastqc, shell=True)
 	except Exception as e:
 		logger.info('---------- FastQC ended unexpectedly :( ')
@@ -144,7 +144,7 @@ def qc_illumina(reads,workdir):
 def qc_assembly(assembly,workdir,tag):
 	wdir_busco = workdir + "/busco"
 	wdir_quast = workdir + "/quast"
-	wdir_general = workdir + "/eval"
+	wdir_general = multiqc_dir
 	busco_dl = ressources_path + "/busco"
 	logger.info('---------- BUSCO STARTED ')
 	try:
@@ -181,10 +181,9 @@ def qc_assembly(assembly,workdir,tag):
 	shutil.rmtree(wdir_busco)
 	shutil.rmtree(wdir_quast)
 
-def multiqc(workdir):
-	
+def multiqc():
 	try:
-		cmd_multiqc = f"multiqc {workdir} -o {workdir}/multiqc"
+		cmd_multiqc = f"multiqc {multiqc_dir} -o {multiqc_dir}"
 		subprocess.check_output(cmd_multiqc, shell=True)
 	except Exception as e:
 		logger.info('---------- MultiQC ended unexpectedly :( ')
@@ -200,6 +199,8 @@ def main():
 	ressources_path = "/Users/roxaneboyer/Bioinformatic/ressources"
 	global busco_lineage
 	busco_lineage = "streptomycetales_odb10"
+	global multiqc_dir
+	multiqc_dir = args.indir + "/multiqc"
 	reads_folder = args.indir + "/raw-reads"
 	illumina_reads_folder = reads_folder + "/illumina"
 	#-----------------------Init logging--------------------------
@@ -225,10 +226,7 @@ def main():
 	#-----------------------Quality check-----------------------
 	if args.qualitycheck:
 		logger.info('----- READS QC START')
-		reads_qc_dir = reads_folder + '/QC'
-		if not (os.path.isdir(reads_qc_dir)):
-			os.mkdir(reads_qc_dir)
-		qc_illumina(reads,reads_qc_dir)
+		qc_illumina(reads)
 		logger.info('----- READS QC DONE')
 		
 	#-----------------------Assembly----------------------------
