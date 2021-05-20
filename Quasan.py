@@ -117,7 +117,7 @@ def assembly_illumina(reads,workdir,tag):
 			logger.info('---------- Folder {} already existing, checking if assembly is inside.'.format(workdir))
 			if (os.path.isfile(shovill_assembly)):
 				logger.info('---------- The assembly {} already exist, skipping step.'.format(shovill_assembly))
-				exit
+				return
 			else:
 				logger.info('---------- Expected file "{}" is not present, starting assembly process.'.format(shovill_assembly))
 		subprocess.check_output(cmd_assembly, shell=True)
@@ -165,9 +165,6 @@ def qc_assembly(assembly,workdir,tag):
 		raise
 	logger.info('---------- QUAST DONE ')
 	logger.info('---------- Gathering essential results files')
-	if (not os.path.isdir(wdir_general)):
-		logger.info('---------- Creating folder {} .'.format(wdir_general))
-		os.mkdir(wdir_general)
 	busco_resume_file = wdir_busco + "/" + tag + "/short_summary.specific." + busco_lineage + "." + tag + ".txt"
 	quast_html = wdir_quast + "/report.html"
 	quast_tsv = wdir_quast + "/report.tsv"
@@ -220,6 +217,9 @@ def main():
 	logger.info('-------------------QUASAN - {}-----------------------'.format(tag))
 	logger.info('Started with arguments :')
 	logger.info('{} '.format(args))
+	if (not os.path.isdir(multiqc_dir)):
+		logger.info('---------- Creating folder {} .'.format(multiqc_dir))
+		os.mkdir(multiqc_dir)
 	#------------------------Reads parsing----------------------
 	reads = parse_reads(illumina_reads_folder)
 
@@ -239,7 +239,8 @@ def main():
 		logger.info('----- ASSEMBLY QC STARTED ')
 		qc_assembly(assembly_file,assembly_dir,tag)
 		logger.info('----- ASSEMBLY QC DONE ')
-			
+	logger.info('----- COMPILING RESULTS WITH MULTIQC')
+	multiqc()	
 	logger.info('----------------------Quasan has ended  (•̀ᴗ•́)و -------------------' )
 
 if __name__ == '__main__':
