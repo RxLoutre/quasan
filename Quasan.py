@@ -105,7 +105,7 @@ def assembly_illumina(reads,workdir,tag):
 	R1 = reads[0]
 	R2 = reads[1]
 	try:
-		cmd_assembly = f"shovill --outdir {workdir}/shovill --R1 {R1} --R2 {R2}"
+		cmd_assembly = f"shovill --outdir {workdir}/shovill --R1 {R1} --R2 {R2} --force"
 		final_assembly = workdir + "/shovill/contigs.fa"
 		final_assembly_graph = workdir + "/shovill/contigs.gfa"
 		shovill_assembly = workdir + "/" + tag + "_shovill.fa"
