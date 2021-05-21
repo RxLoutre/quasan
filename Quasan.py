@@ -148,8 +148,11 @@ def qc_assembly(assembly,workdir,tag):
 	busco_dl = ressources_path + "/busco"
 	logger.info('---------- BUSCO STARTED ')
 	try:
-		cmd_busco = f"busco -i {assembly} -o {tag} --out_path {wdir_busco} -l {busco_lineage} -m geno --download_path {busco_dl} -f"
-		subprocess.check_output(cmd_busco, shell=True)
+		if(os.path.isfile(assembly)):
+			cmd_busco = f"busco -i {assembly} -o {tag} --out_path {wdir_busco} -l {busco_lineage} -m geno --download_path {busco_dl} -f"
+			subprocess.check_output(cmd_busco, shell=True)
+		else:
+			logger.error('---------- Busco could not find the assembly file {} '.format(assembly))
 	except Exception as e:
 		logger.info('---------- Busco ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
