@@ -15,6 +15,7 @@ import subprocess
 import logging
 import os
 import shutil
+from typing import Sequence
 
 def get_arguments():
     """Parsing the arguments"""
@@ -86,21 +87,43 @@ ______________________________________________________________________
                         help=argparse.SUPPRESS, required=False, default="Quasan.log")
     return (parser.parse_args())
  
-def parse_reads(workdir):
+def return_reads(workdir):
 	files = os.listdir(workdir)
 	reads = []
 	for read_file in files:
 		name, extension = os.path.splitext(read_file)
+		read_path = workdir + '/' + read_file
 		if(extension == '.gz'):
 			name, extension = os.path.splitext(name)
 		if(extension == '.fastq' or extension == '.fq'):
-			logger.info('Found fastq file : {}'.format(read_file))
-			read_path = workdir + '/' + read_file
+			logger.info('Added fastq file : {} to {} directory'.format(read_file,workdir))
+			reads.append(read_path)
+		elif(extension == '.bam'):
+			logger.info('Found a bam file : {} , probably from PacBio, converting to fastq.'.format(read_file))
+			try:
+				cmd_bam2fastq = f"bam2fastq -o {name} {read_path}"
+				subprocess.check_output(cmd_bam2fastq, shell=True)
+			except Exception as e:
+				logger.info('---------- Bam2fastq ended unexpectedly :( ')
+				logger.error(e, exc_info=True)
+				raise
+			read_path = workdir + '/' + name  + ".bam"
 			reads.append(read_path)
 		else:
-			logger.info('The file {} is not a fastq file.. But a {} file (⊙_☉)'.format(name,extension))
+			logger.info('I dont think we need a {} file (⊙_☉)'.format(name,extension))
 	return reads
-	
+
+def parse_reads(workdir):
+	reads_dir = os.listdir(workdir)
+	reads = {}
+	for technology in reads_dir:
+		if os.path.isdir(workdir + "/" + technology) and (technology in sequencing_technologies):
+			logger.info("Detected a folder for {} technology".format(technology))
+			reads[technology] = return_reads(workdir + "/" + technology)
+		else:
+			logger.info("Technology {} detected but not supported yet.".format(technology))
+	return reads
+
 def assembly_illumina(reads,workdir,tag):
 	R1 = reads[0]
 	R2 = reads[1]
@@ -201,6 +224,8 @@ def main():
 	busco_lineage = "streptomycetales_odb10"
 	global multiqc_dir
 	multiqc_dir = args.indir + "/multiqc"
+	global sequencing_technologies
+	sequencing_technologies = ['illumina','pacbio','nanopore']
 	reads_folder = args.indir + "/raw-reads"
 	illumina_reads_folder = reads_folder + "/illumina"
 	#-----------------------Init logging--------------------------
@@ -224,12 +249,14 @@ def main():
 		logger.info('---------- Creating folder {} .'.format(multiqc_dir))
 		os.mkdir(multiqc_dir)
 	#------------------------Reads parsing----------------------
-	reads = parse_reads(illumina_reads_folder)
+	logger.info('----- PARSING READS')
+	reads = parse_reads(reads_folder)
 
 	#-----------------------Quality check-----------------------
 	if args.qualitycheck:
 		logger.info('----- READS QC START')
-		qc_illumina(reads)
+		#/!\ Better way to do this later ?
+		qc_illumina(reads["illumina"])
 		logger.info('----- READS QC DONE')
 		
 	#-----------------------Assembly----------------------------
@@ -237,7 +264,7 @@ def main():
 		logger.info('----- ASSEMBLY START')
 		assembly_dir = args.indir + '/assembly'
 		assembly_file = assembly_dir + "/" + tag + "_shovill.fa"
-		assembly_illumina(reads,assembly_dir,tag)
+		assembly_illumina(reads["illumina"],assembly_dir,tag)
 		logger.info('----- ASSEMBLY DONE')
 		logger.info('----- ASSEMBLY QC STARTED ')
 		qc_assembly(assembly_file,assembly_dir,tag)
