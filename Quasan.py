@@ -124,6 +124,7 @@ def parse_reads(workdir):
 			logger.info("Technology {} detected but not supported yet.".format(technology))
 	return reads
 
+#/!\ Make a common part for both assemblies ?
 def assembly_illumina(reads,workdir,tag):
 	R1 = reads[0]
 	R2 = reads[1]
@@ -148,6 +149,7 @@ def assembly_illumina(reads,workdir,tag):
 		os.replace(final_assembly,shovill_assembly)
 		os.replace(final_assembly_graph,shovill_assembly_graph)
 		shutil.rmtree(workdir+"/shovill")
+		return shovill_assembly
 	except Exception as e:
 		logger.info('---------- Shovill ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
@@ -163,6 +165,33 @@ def qc_illumina(reads):
 		logger.info('---------- FastQC ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
+
+def assembly_pacbio(reads,workdir,tag):
+	try:
+		flye_dir = workdir + "/flye"
+		cmd_flye = f"flye --pacbio-raw {reads} --out-dir {flye_dir} --threads 8"
+		final_assembly = flye_dir + "/assembly.fasta"
+		final_assembly_graph = flye_dir + "/assembly_graph.gfa"
+		flye_assembly = workdir + "/" + tag + "_flye.fasta"
+		flye_assembly_graph = workdir + "/" + tag + "_flye.gfa"
+		subprocess.check_output(cmd_flye, shell=True)
+		if not (os.path.isdir(flye_dir)):
+			logger.info('---------- Creating folder {}.'.format(flye_dir))
+			os.mkdir(flye_dir)
+		else:
+			logger.info('---------- Folder {} already existing, checking if assembly is inside.'.format(flye_dir))
+			if (os.path.isfile(flye_assembly)):
+				logger.info('---------- The assembly {} already exist, skipping step.'.format(flye_assembly))
+				return
+			else:
+				logger.info('---------- Expected file "{}" is not present, starting assembly process.'.format(flye_assembly))
+	except Exception as e:
+		logger.info('---------- Flye ended unexpectedly :( ')
+		logger.error(e, exc_info=True)
+		raise
+
+#def polishing(assembly,reads):
+	
 		
 def qc_assembly(assembly,workdir,tag):
 	wdir_busco = workdir + "/busco"
@@ -206,7 +235,7 @@ def qc_assembly(assembly,workdir,tag):
 
 def multiqc():
 	try:
-		cmd_multiqc = f"multiqc {multiqc_dir} -o {multiqc_dir}"
+		cmd_multiqc = f"multiqc {multiqc_dir} -o {multiqc_dir} -f"
 		subprocess.check_output(cmd_multiqc, shell=True)
 	except Exception as e:
 		logger.info('---------- MultiQC ended unexpectedly :( ')
@@ -227,7 +256,6 @@ def main():
 	global sequencing_technologies
 	sequencing_technologies = ['illumina','pacbio','nanopore']
 	reads_folder = args.indir + "/raw-reads"
-	illumina_reads_folder = reads_folder + "/illumina"
 	#-----------------------Init logging--------------------------
 	try:
 		global logger
@@ -255,7 +283,6 @@ def main():
 	#-----------------------Quality check-----------------------
 	if args.qualitycheck:
 		logger.info('----- READS QC START')
-		#/!\ Better way to do this later ?
 		qc_illumina(reads["illumina"])
 		logger.info('----- READS QC DONE')
 		
@@ -263,8 +290,18 @@ def main():
 	if args.assembly:
 		logger.info('----- ASSEMBLY START')
 		assembly_dir = args.indir + '/assembly'
-		assembly_file = assembly_dir + "/" + tag + "_shovill.fa"
-		assembly_illumina(reads["illumina"],assembly_dir,tag)
+		techno_available = reads.keys
+		assembly_file = ""
+		if ("illumina" in techno_available) and ("pacbio" in techno_available):
+			logger.info('---------- Both Illumina reads and PacBio reads are available, starting hybrid assembly.')
+			assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,tag)
+			#assembly_file = polishing(assembly_file,reads["illumina"])
+		elif ("illumina" in techno_available):
+			logger.info('---------- Only Illumina reads are available, starting Illumina assembly.')
+			assembly_file = assembly_illumina(reads["illumina"],assembly_dir,tag)
+		elif ("pacbio" in techno_available):
+			logger.info('---------- Only Illumina reads are available, starting Illumina assembly.')
+			assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,tag)
 		logger.info('----- ASSEMBLY DONE')
 		logger.info('----- ASSEMBLY QC STARTED ')
 		qc_assembly(assembly_file,assembly_dir,tag)
