@@ -18,8 +18,8 @@ import shutil
 from typing import Sequence
 
 def get_arguments():
-    """Parsing the arguments"""
-    parser = argparse.ArgumentParser(description="",
+	"""Parsing the arguments"""
+	parser = argparse.ArgumentParser(description="",
                                      usage='''
 ______________________________________________________________________
   Quasan: (Quality - Assembly - Analysis - BCG Discovery )
@@ -69,23 +69,16 @@ Options:
 
 ______________________________________________________________________
 ''')
-
-    parser.add_argument("-D", "--indir", help=argparse.SUPPRESS, required=True)
-    parser.add_argument("-a", "--assembly",
-                        help=argparse.SUPPRESS, required=False, action='store_true')
-    parser.add_argument("-an", "--annotation",
-                        help=argparse.SUPPRESS, required=False, action='store_true')
-    parser.add_argument("-q", "--qualitycheck",
-                        help=argparse.SUPPRESS, required=False, action='store_true')
-    parser.add_argument("-as", "--antismash",
-                        help=argparse.SUPPRESS, required=False, action='store_true')
-    parser.add_argument("-bs", "--bigscape",
-                        help=argparse.SUPPRESS, required=False, action='store_true')
-    parser.add_argument("--all", "--all",
-                        help=argparse.SUPPRESS, required=False, action='store_true')
-    parser.add_argument("--logfile", "--logfile",
-                        help=argparse.SUPPRESS, required=False, default="Quasan.log")
-    return (parser.parse_args())
+	parser.add_argument("-D", "--indir", help=argparse.SUPPRESS, required=True)
+	parser.add_argument("-a", "--assembly", help=argparse.SUPPRESS, required=False, action='store_true')
+	parser.add_argument("-an", "--annotation", help=argparse.SUPPRESS, required=False, action='store_true')
+	parser.add_argument("-q", "--qualitycheck", help=argparse.SUPPRESS, required=False, action='store_true')
+	parser.add_argument("-as", "--antismash", help=argparse.SUPPRESS, required=False, action='store_true')
+	parser.add_argument("-bs", "--bigscape", help=argparse.SUPPRESS, required=False, action='store_true')
+	parser.add_argument("--all", "--all", help=argparse.SUPPRESS, required=False, action='store_true')
+	parser.add_argument("--logfile", "--logfile", help=argparse.SUPPRESS, required=False, default="Quasan.log")
+	parser.add_argument("--debug", "--debug", help=argparse.SUPPRESS, required=False, action='store_true')
+	return (parser.parse_args())
  
 def return_reads(workdir):
 	files = os.listdir(workdir)
@@ -98,7 +91,8 @@ def return_reads(workdir):
 		if(extension == '.fastq' or extension == '.fq'):
 			logger.info('---------- Added fastq file : {} to {} directory'.format(read_file,workdir))
 			reads.append(read_path)
-		#/!\ To be improved in order not to add twice the same fastq. Even though downstream we use only the first file	
+		#/!\ To be improved in order not to add twice the same fastq if both fastq and bam are present.
+		# Even though downstream we use only the first file	
 		elif(extension == '.bam'):
 			logger.info('---------- Found a bam file : {} , probably from PacBio. Checking if fastq already exist.'.format(read_file))
 			converted_reads = workdir + "/" + name + ".fastq.gz"
@@ -116,7 +110,7 @@ def return_reads(workdir):
 			read_path = converted_reads
 			reads.append(read_path)
 		else:
-			logger.info('---------- I dont think we need this file : {} Right (⊙_☉) ?'.format(read_file))
+			logger.debug('---------- I dont think we need this file : {} Right (⊙_☉) ?'.format(read_file))
 	return reads
 
 def parse_reads(workdir):
@@ -127,7 +121,7 @@ def parse_reads(workdir):
 			logger.info("---------- Detected a folder for {} technology".format(technology))
 			reads[technology] = return_reads(workdir + "/" + technology)
 		else:
-			logger.info("---------- Technology {} detected but not supported yet.".format(technology))
+			logger.debug("---------- Technology {} detected but not supported yet.".format(technology))
 	return reads
 
 #/!\ Make a common part for both assemblies ?
@@ -193,6 +187,7 @@ def assembly_pacbio(reads,workdir,tag):
 				return
 			else:
 				logger.info('---------- Expected file "{}" is not present, starting assembly process.'.format(flye_assembly))
+		logger.info('---------- Starting now Flye with command : {} '.format(cmd_flye))
 		subprocess.check_output(cmd_flye, shell=True)
 		logger.info('---------- Removing extra files and keeping only fasta files.')
 		os.replace(final_assembly,flye_assembly)
@@ -253,7 +248,10 @@ def multiqc():
 		logger.info('---------- MultiQC ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
+
+#----------------------------------------------------------------------------------
 #--------------------------------------MAIN----------------------------------------
+#----------------------------------------------------------------------------------
 def main():
 	#----------------------Args and global------------------------
 	args = get_arguments()
@@ -272,9 +270,15 @@ def main():
 	try:
 		global logger
 		logger = logging.getLogger('quasan_logger')
-		logger.setLevel(logging.DEBUG)
+		if (args.debug):
+			logger.setLevel(logging.DEBUG)
+		else:
+			logger.setLevel(logging.INFO)
 		fh = logging.FileHandler(args.logfile)
-		fh.setLevel(logging.DEBUG)
+		if (args.debug):
+			fh.setLevel(logging.DEBUG)
+		else:
+			fh.setLevel(logging.INFO)
 		formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 		fh.setFormatter(formatter)
 		logger.addHandler(fh)
