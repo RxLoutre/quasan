@@ -96,21 +96,27 @@ def return_reads(workdir):
 		if(extension == '.gz'):
 			name, extension = os.path.splitext(name)
 		if(extension == '.fastq' or extension == '.fq'):
-			logger.info('Added fastq file : {} to {} directory'.format(read_file,workdir))
+			logger.info('---------- Added fastq file : {} to {} directory'.format(read_file,workdir))
 			reads.append(read_path)
+		#/!\ To be improved in order not to add twice the same fastq. Even though downstream we use only the first file	
 		elif(extension == '.bam'):
-			logger.info('Found a bam file : {} , probably from PacBio, converting to fastq.'.format(read_file))
-			try:
-				cmd_bam2fastq = f"bam2fastq -o {name} {read_path}"
-				subprocess.check_output(cmd_bam2fastq, shell=True)
-			except Exception as e:
-				logger.info('---------- Bam2fastq ended unexpectedly :( ')
-				logger.error(e, exc_info=True)
-				raise
-			read_path = workdir + '/' + name  + ".bam"
+			logger.info('---------- Found a bam file : {} , probably from PacBio. Checking if fastq already exist.'.format(read_file))
+			converted_reads = workdir + "/" + name + ".fastq.gz"
+			if (os.path.isfile(converted_reads)):
+				logger.info('---------- Corresponding fastq {} already existing, skipping conversion.'.format(converted_reads))
+			else:
+				logger.info('---------- The fastq {} isn\' there yet, converting bam to fastq...'.format(converted_reads))
+				try:
+					cmd_bam2fastq = f"bam2fastq -o {workdir}/{name} {read_path}"
+					subprocess.check_output(cmd_bam2fastq, shell=True)
+				except Exception as e:
+					logger.info('---------- Bam2fastq ended unexpectedly :( ')
+					logger.error(e, exc_info=True)
+					raise
+			read_path = converted_reads
 			reads.append(read_path)
 		else:
-			logger.info('I dont think we need a {} file (⊙_☉)'.format(name,extension))
+			logger.info('---------- I dont think we need this file : {} Right (⊙_☉) ?'.format(read_file))
 	return reads
 
 def parse_reads(workdir):
@@ -118,10 +124,10 @@ def parse_reads(workdir):
 	reads = {}
 	for technology in reads_dir:
 		if os.path.isdir(workdir + "/" + technology) and (technology in sequencing_technologies):
-			logger.info("Detected a folder for {} technology".format(technology))
+			logger.info("---------- Detected a folder for {} technology".format(technology))
 			reads[technology] = return_reads(workdir + "/" + technology)
 		else:
-			logger.info("Technology {} detected but not supported yet.".format(technology))
+			logger.info("---------- Technology {} detected but not supported yet.".format(technology))
 	return reads
 
 #/!\ Make a common part for both assemblies ?
@@ -168,13 +174,15 @@ def qc_illumina(reads):
 
 def assembly_pacbio(reads,workdir,tag):
 	try:
+		#Deal better if they are several fastq files for PacBio reads ?
+		if isinstance(reads, list):
+			reads = reads[0]
 		flye_dir = workdir + "/flye"
 		cmd_flye = f"flye --pacbio-raw {reads} --out-dir {flye_dir} --threads 8"
 		final_assembly = flye_dir + "/assembly.fasta"
 		final_assembly_graph = flye_dir + "/assembly_graph.gfa"
 		flye_assembly = workdir + "/" + tag + "_flye.fasta"
 		flye_assembly_graph = workdir + "/" + tag + "_flye.gfa"
-		subprocess.check_output(cmd_flye, shell=True)
 		if not (os.path.isdir(flye_dir)):
 			logger.info('---------- Creating folder {}.'.format(flye_dir))
 			os.mkdir(flye_dir)
@@ -185,6 +193,12 @@ def assembly_pacbio(reads,workdir,tag):
 				return
 			else:
 				logger.info('---------- Expected file "{}" is not present, starting assembly process.'.format(flye_assembly))
+		subprocess.check_output(cmd_flye, shell=True)
+		logger.info('---------- Removing extra files and keeping only fasta files.')
+		os.replace(final_assembly,flye_assembly)
+		os.replace(final_assembly_graph,flye_assembly_graph)
+		shutil.rmtree(workdir+"/shovill")
+		return flye_assembly
 	except Exception as e:
 		logger.info('---------- Flye ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
@@ -203,8 +217,6 @@ def qc_assembly(assembly,workdir,tag):
 		if(os.path.isfile(assembly)):
 			cmd_busco = f"busco -i {assembly} -o {tag} --out_path {wdir_busco} -l {busco_lineage} -m geno --download_path {busco_dl} -f"
 			subprocess.check_output(cmd_busco, shell=True)
-		else:
-			logger.error('---------- Busco could not find the assembly file {} '.format(assembly))
 	except Exception as e:
 		logger.info('---------- Busco ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
@@ -290,7 +302,7 @@ def main():
 	if args.assembly:
 		logger.info('----- ASSEMBLY START')
 		assembly_dir = args.indir + '/assembly'
-		techno_available = reads.keys
+		techno_available = reads.keys()
 		assembly_file = ""
 		if ("illumina" in techno_available) and ("pacbio" in techno_available):
 			logger.info('---------- Both Illumina reads and PacBio reads are available, starting hybrid assembly.')
