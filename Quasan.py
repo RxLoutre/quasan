@@ -16,6 +16,7 @@ import logging
 import os
 import shutil
 from typing import Sequence
+import glob
 
 def get_arguments():
 	"""Parsing the arguments"""
@@ -104,7 +105,7 @@ def return_reads(workdir):
 					cmd_bam2fastq = f"bam2fastq -o {workdir}/{name} {read_path}"
 					subprocess.check_output(cmd_bam2fastq, shell=True)
 				except Exception as e:
-					logger.info('---------- Bam2fastq ended unexpectedly :( ')
+					logger.error('---------- Bam2fastq ended unexpectedly :( ')
 					logger.error(e, exc_info=True)
 					raise
 			read_path = converted_reads
@@ -151,7 +152,7 @@ def assembly_illumina(reads,workdir,tag):
 		shutil.rmtree(workdir+"/shovill")
 		return shovill_assembly
 	except Exception as e:
-		logger.info('---------- Shovill ended unexpectedly :( ')
+		logger.error('---------- Shovill ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
 		
@@ -162,7 +163,7 @@ def qc_illumina(reads):
 		cmd_fastqc = f"fastqc {R1} {R2} -o {multiqc_dir} -t 16"
 		subprocess.check_output(cmd_fastqc, shell=True)
 	except Exception as e:
-		logger.info('---------- FastQC ended unexpectedly :( ')
+		logger.error('---------- FastQC ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
 
@@ -195,13 +196,68 @@ def assembly_pacbio(reads,workdir,tag):
 		shutil.rmtree(workdir+"/shovill")
 		return flye_assembly
 	except Exception as e:
-		logger.info('---------- Flye ended unexpectedly :( ')
+		logger.error('---------- Flye ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
 
-#def polishing(assembly,reads):
-	
-		
+def polishing(workdir,assembly,reads):
+	R1 = reads[0]
+	R2 = reads[1]
+	#Making an index out of the freshly made assembly
+	alignement_dir = workdir + "/alignement"
+	name, extension = os.path.splitext(assembly)
+	assembly_path, assembly_file = os.path.split(assembly)
+	polished_assembly = name + "_polished" + extension
+	alignement_prefix = "illuminaReadsVS" + name
+	sam = alignement_prefix + ".sam"
+	bam = alignement_prefix + ".bam"
+	bam_sorted = alignement_prefix + "-sorted.bam"
+	index = alignement_dir + "/" + name
+	if not (os.path.isdir(alignement_dir)):
+			logger.info('---------- Creating folder {}.'.format(alignement_dir))
+			os.mkdir(alignement_dir)
+	else:
+		logger.info('---------- Folder {} already existing.')
+	try:
+		cmd_index = f"bowtie2-build {assembly} {index}"
+		logger.info('---------- Starting bowtie2 index for {}.{}'.format(name,extension))
+		subprocess.check_output(cmd_index, shell=True)
+	except Exception as e:
+		logger.error('---------- Bowtie2-build ended unexpectedly :( ')
+		logger.error(e, exc_info=True)
+		raise
+	#Alignement with bowtie
+	cmd_bowtie = f"bowtie2 -x {index} -1 {R1} -2 {R2} -S {sam} -p 8"
+	logger.info('---------- Starting bowtie2 alignement with command : {}'.format(cmd_bowtie))
+	try:
+		subprocess.check_output(cmd_bowtie, shell=True)
+	except Exception as e:
+		logger.error('---------- Bowtie2 ended unexpectedly :( ')
+		logger.error(e, exc_info=True)
+		raise
+	logger.info('---------- Processing alignement...')
+	try:
+		#Converting to bam
+		cmd_samtools1 = f"samtools view -S -b {sam} > {bam} "
+		subprocess.check_output(cmd_samtools1, shell=True)
+		#Sorting bam
+		cmd_samtools2 = f"samtools sort {bam} -o {bam_sorted}"
+		subprocess.check_output(cmd_samtools2, shell=True)
+		#Indexing for viewing more easily in IGV
+		cmd_samtools3 = f"samtools index {bam_sorted}"
+		subprocess.check_output(cmd_samtools3, shell=True)
+	except Exception as e:
+		logger.error('---------- Samtools ended unexpectedly :( ')
+		logger.error(e, exc_info=True)
+		raise
+	try:
+		cmd_pilon = f"java -Xmx8G -jar {pilon_path}/pilon.jar --genome {assembly} --frags {bam_sorted} --output {polished_assembly} --outdir {assembly_path}"
+		logger.info('---------- Starting Pilon with command : {}'.format(cmd_pilon))
+	except Exception as e:
+		logger.error('---------- Pilon ended unexpectedly :( ')
+		logger.error(e, exc_info=True)
+		raise
+
 def qc_assembly(assembly,workdir,tag):
 	wdir_busco = workdir + "/busco"
 	wdir_quast = workdir + "/quast"
@@ -213,7 +269,7 @@ def qc_assembly(assembly,workdir,tag):
 			cmd_busco = f"busco -i {assembly} -o {tag} --out_path {wdir_busco} -l {busco_lineage} -m geno --download_path {busco_dl} -f"
 			subprocess.check_output(cmd_busco, shell=True)
 	except Exception as e:
-		logger.info('---------- Busco ended unexpectedly :( ')
+		logger.error('---------- Busco ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
 	logger.info('---------- BUSCO DONE ')
@@ -222,7 +278,7 @@ def qc_assembly(assembly,workdir,tag):
 		cmd_quast = f"quast -o {wdir_quast} {assembly}"
 		subprocess.check_output(cmd_quast, shell=True)
 	except Exception as e:
-		logger.info('---------- Quast ended unexpectedly :( ')
+		logger.error('---------- Quast ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
 	logger.info('---------- QUAST DONE ')
@@ -245,7 +301,7 @@ def multiqc():
 		cmd_multiqc = f"multiqc {multiqc_dir} -o {multiqc_dir} -f"
 		subprocess.check_output(cmd_multiqc, shell=True)
 	except Exception as e:
-		logger.info('---------- MultiQC ended unexpectedly :( ')
+		logger.error('---------- MultiQC ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
 
@@ -266,6 +322,9 @@ def main():
 	global sequencing_technologies
 	sequencing_technologies = ['illumina','pacbio','nanopore']
 	reads_folder = args.indir + "/raw-reads"
+	#/!\ better way to do this ?
+	global pilon_path
+	pilon_path = "/Users/roxaneboyer/miniconda3/envs/assembly/share/pilon-1.24-0/"
 	#-----------------------Init logging--------------------------
 	try:
 		global logger
