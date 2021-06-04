@@ -178,49 +178,47 @@ def assembly_pacbio(reads,workdir,tag):
 		final_assembly_graph = flye_dir + "/assembly_graph.gfa"
 		flye_assembly = workdir + "/" + tag + "_flye.fasta"
 		flye_assembly_graph = workdir + "/" + tag + "_flye.gfa"
-		if not (os.path.isdir(flye_dir)):
-			logger.info('---------- Creating folder {}.'.format(flye_dir))
-			os.mkdir(flye_dir)
+		if (os.path.isfile(flye_assembly)):
+			logger.info('---------- The assembly {} already exist, skipping step.'.format(flye_assembly))
+			return flye_assembly
 		else:
-			logger.info('---------- Folder {} already existing, checking if assembly is inside.'.format(flye_dir))
-			if (os.path.isfile(flye_assembly)):
-				logger.info('---------- The assembly {} already exist, skipping step.'.format(flye_assembly))
-				return
-			else:
-				logger.info('---------- Expected file "{}" is not present, starting assembly process.'.format(flye_assembly))
+			logger.info('---------- Expected file "{}" is not present, starting assembly process.'.format(flye_assembly))
+			if not (os.path.isdir(flye_dir)):
+				logger.info('---------- Creating folder {}.'.format(flye_dir))
+				os.mkdir(flye_dir)
 		logger.info('---------- Starting now Flye with command : {} '.format(cmd_flye))
 		subprocess.check_output(cmd_flye, shell=True)
 		logger.info('---------- Removing extra files and keeping only fasta files.')
 		os.replace(final_assembly,flye_assembly)
 		os.replace(final_assembly_graph,flye_assembly_graph)
-		shutil.rmtree(workdir+"/shovill")
+		shutil.rmtree(workdir+"/flye")
+		logger.info('---------- Produced assembly {flye_assembly}, yaaay !')
 		return flye_assembly
 	except Exception as e:
 		logger.error('---------- Flye ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
 
-def polishing(workdir,assembly,reads):
+def polishing(workdir,assembly,reads,tag):
 	R1 = reads[0]
 	R2 = reads[1]
 	#Making an index out of the freshly made assembly
 	alignement_dir = workdir + "/alignement"
-	name, extension = os.path.splitext(assembly)
-	assembly_path, assembly_file = os.path.split(assembly)
-	polished_assembly = name + "_polished" + extension
-	alignement_prefix = "illuminaReadsVS" + name
-	sam = alignement_prefix + ".sam"
-	bam = alignement_prefix + ".bam"
-	bam_sorted = alignement_prefix + "-sorted.bam"
-	index = alignement_dir + "/" + name
+	assembly_path = workdir + "/assembly"
+	polished_assembly = tag + "_flye_polished"
+	alignement_prefix = "illuminaReadsVS" + tag
+	sam = alignement_dir + "/" + alignement_prefix + ".sam"
+	bam = alignement_dir + "/" + alignement_prefix + ".bam"
+	bam_sorted = alignement_dir + "/" + alignement_prefix + "-sorted.bam"
+	index = alignement_dir + "/" + tag
 	if not (os.path.isdir(alignement_dir)):
 			logger.info('---------- Creating folder {}.'.format(alignement_dir))
 			os.mkdir(alignement_dir)
 	else:
-		logger.info('---------- Folder {} already existing.')
+		logger.info('---------- Folder {} already existing.'.format(alignement_dir))
 	try:
 		cmd_index = f"bowtie2-build {assembly} {index}"
-		logger.info('---------- Starting bowtie2 index for {}.{}'.format(name,extension))
+		logger.info('---------- Starting bowtie2 index for {}'.format(tag))
 		subprocess.check_output(cmd_index, shell=True)
 	except Exception as e:
 		logger.error('---------- Bowtie2-build ended unexpectedly :( ')
@@ -253,10 +251,13 @@ def polishing(workdir,assembly,reads):
 	try:
 		cmd_pilon = f"java -Xmx8G -jar {pilon_path}/pilon.jar --genome {assembly} --frags {bam_sorted} --output {polished_assembly} --outdir {assembly_path}"
 		logger.info('---------- Starting Pilon with command : {}'.format(cmd_pilon))
+		subprocess.check_output(cmd_pilon, shell=True)
 	except Exception as e:
 		logger.error('---------- Pilon ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
+	final = assembly_path + "/" + polished_assembly + ".fasta"
+	return final
 
 def qc_assembly(assembly,workdir,tag):
 	wdir_busco = workdir + "/busco"
@@ -370,7 +371,7 @@ def main():
 		if ("illumina" in techno_available) and ("pacbio" in techno_available):
 			logger.info('---------- Both Illumina reads and PacBio reads are available, starting hybrid assembly.')
 			assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,tag)
-			#assembly_file = polishing(assembly_file,reads["illumina"])
+			assembly_file = polishing(args.indir,assembly_file,reads["illumina"],tag)
 		elif ("illumina" in techno_available):
 			logger.info('---------- Only Illumina reads are available, starting Illumina assembly.')
 			assembly_file = assembly_illumina(reads["illumina"],assembly_dir,tag)
