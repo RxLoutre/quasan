@@ -297,6 +297,24 @@ def qc_assembly(assembly,workdir,tag):
 	shutil.rmtree(wdir_busco)
 	shutil.rmtree(wdir_quast)
 
+def annotation(assembly,workdir):
+	try:
+		if not (os.path.isdir(workdir)):
+			logger.info('---------- Creating folder {} .'.format(workdir))
+			os.mkdir(workdir)
+		else:
+			logger.info('---------- Folder {} already existing.'.format(workdir))
+		name = os.path.basename(assembly)
+		tag, extension = os.path.splitext(name)
+		prefix = tag + "_prokka"
+		cmd_prokka = f"prokka --outdir {workdir} --prefix {prefix} --gcode 11 --cpu 8 --addgenes --rfam --force {assembly}"
+		logger.info('---------- Starting prokka with command : {} .'.format(cmd_prokka))
+		subprocess.check_output(cmd_prokka, shell=True)
+	except Exception as e:
+		logger.error('---------- Prokka ended unexpectedly :( ')
+		logger.error(e, exc_info=True)
+		raise
+
 def multiqc():
 	try:
 		cmd_multiqc = f"multiqc {multiqc_dir} -o {multiqc_dir} -f"
@@ -314,6 +332,8 @@ def main():
 	args = get_arguments()
 	#If args.indir = /my/path/STRAIN_XX, then tag = STRAIN_XX
 	tag = os.path.basename(args.indir)
+	assembly_dir = args.indir + '/assembly'
+	annotation_dir = args.indir + '/annotation'
 	global ressources_path
 	ressources_path = "/Users/roxaneboyer/Bioinformatic/ressources"
 	global busco_lineage
@@ -365,7 +385,6 @@ def main():
 	#-----------------------Assembly----------------------------
 	if args.assembly:
 		logger.info('----- ASSEMBLY START')
-		assembly_dir = args.indir + '/assembly'
 		techno_available = reads.keys()
 		assembly_file = ""
 		if ("illumina" in techno_available) and ("pacbio" in techno_available):
@@ -383,6 +402,13 @@ def main():
 		qc_assembly(assembly_file,assembly_dir,tag)
 		logger.info('----- ASSEMBLY QC DONE ')
 	logger.info('----- COMPILING RESULTS WITH MULTIQC')
+	#-----------------------Annotation---------------------------
+	if args.annotation:
+		logger.info('----- ANNOTATION START')
+		assemblies = glob.glob(assembly_dir+'/*.f*a')
+		for assembly in assemblies:
+			logger.info('---------- Starting for assembly {}'.format(assembly))
+			annotation(assembly,annotation_dir)
 	multiqc()	
 	logger.info('----------------------Quasan has ended  (•̀ᴗ•́)و -------------------' )
 
