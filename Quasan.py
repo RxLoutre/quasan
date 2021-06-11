@@ -18,6 +18,7 @@ import shutil
 from typing import Sequence
 import glob
 
+
 def get_arguments():
 	"""Parsing the arguments"""
 	parser = argparse.ArgumentParser(description="",
@@ -310,6 +311,17 @@ def annotation(assembly,workdir):
 		cmd_prokka = f"prokka --outdir {workdir} --prefix {prefix} --gcode 11 --cpu 8 --addgenes --rfam --force {assembly}"
 		logger.info('---------- Starting prokka with command : {} .'.format(cmd_prokka))
 		subprocess.check_output(cmd_prokka, shell=True)
+		logger.info('---------- Moving report file to multiqc directory...')
+		report = glob.glob(workdir+'/*.txt')
+		logger.debug('---------- List of prokkas reports : {}'.format(report))
+		report = report[0]
+		report_mqc = multiqc_dir + "/" + prefix + ".txt"
+		fin = open(report,"rt")
+		fout = open(report_mqc,"wt")
+		for line in fin:
+			fout.write(line.replace('strain',tag))
+		fin.close()
+		fout.close()
 	except Exception as e:
 		logger.error('---------- Prokka ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
@@ -401,14 +413,16 @@ def main():
 		logger.info('----- ASSEMBLY QC STARTED ')
 		qc_assembly(assembly_file,assembly_dir,tag)
 		logger.info('----- ASSEMBLY QC DONE ')
-	logger.info('----- COMPILING RESULTS WITH MULTIQC')
+	
 	#-----------------------Annotation---------------------------
 	if args.annotation:
 		logger.info('----- ANNOTATION START')
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
 		for assembly in assemblies:
-			logger.info('---------- Starting for assembly {}'.format(assembly))
+			logger.info('---------- Starting annotation for assembly {}'.format(assembly))
 			annotation(assembly,annotation_dir)
+	#--------------------------MultiQc---------------------------
+	logger.info('----- COMPILING RESULTS WITH MULTIQC')
 	multiqc()	
 	logger.info('----------------------Quasan has ended  (•̀ᴗ•́)و -------------------' )
 
