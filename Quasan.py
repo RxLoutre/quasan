@@ -312,9 +312,8 @@ def annotation(assembly,workdir):
 		logger.info('---------- Starting prokka with command : {} .'.format(cmd_prokka))
 		subprocess.check_output(cmd_prokka, shell=True)
 		logger.info('---------- Moving report file to multiqc directory...')
-		report = glob.glob(workdir+'/*.txt')
-		logger.debug('---------- List of prokkas reports : {}'.format(report))
-		report = report[0]
+		report = workdir + "/" + prefix + ".txt"
+		logger.debug('---------- Prokkas report : {}'.format(report))
 		report_mqc = multiqc_dir + "/" + prefix + ".txt"
 		fin = open(report,"rt")
 		fout = open(report_mqc,"wt")
@@ -378,7 +377,14 @@ def main():
 		print("No permissions to write the logs at {}. Fine, no logs then :/".format(args.log))
 		pass # indicates that user has no write permission in this directory. No logs then
 	
-	logger.info('-------------------QUASAN - {}-----------------------'.format(tag))
+	logger.info('--------------------------------------------------')
+	logger.info('________')                                      
+	logger.info('\_____  \  __ _______    ___________    ____  ')
+	logger.info(' /  / \  \|  |  \__  \  /  ___/\__  \  /    \ ')
+	logger.info('/   \_/.  \  |  // __ \_\___ \  / __ \|   |  \ ')
+	logger.info('\_____\ \_/____/(____  /____  >(____  /___|  / ')
+	logger.info('       \__>          \/     \/      \/     \/ ')
+	logger.info('---------------------- {} ----------------------'.format(tag))
 	logger.info('Started with arguments :')
 	logger.info('{} '.format(args))
 	if (not os.path.isdir(multiqc_dir)):
@@ -410,9 +416,6 @@ def main():
 			logger.info('---------- Only Illumina reads are available, starting Illumina assembly.')
 			assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,tag)
 		logger.info('----- ASSEMBLY DONE')
-		logger.info('----- ASSEMBLY QC STARTED ')
-		qc_assembly(assembly_file,assembly_dir,tag)
-		logger.info('----- ASSEMBLY QC DONE ')
 	
 	#-----------------------Annotation---------------------------
 	if args.annotation:
@@ -422,6 +425,12 @@ def main():
 			logger.info('---------- Starting annotation for assembly {}'.format(assembly))
 			annotation(assembly,annotation_dir)
 	#--------------------------MultiQc---------------------------
+	logger.info('----- GENOMES QC STARTED ')
+	assemblies = glob.glob(assembly_dir+'/*.f*a')
+	for assembly in assemblies:
+		logger.debug('---------- Started for {} '.format(assembly))
+		qc_assembly(assembly,assembly_dir,tag)
+	logger.info('----- GENOMES QC DONE ')
 	logger.info('----- COMPILING RESULTS WITH MULTIQC')
 	multiqc()	
 	logger.info('----------------------Quasan has ended  (•̀ᴗ•́)و -------------------' )
