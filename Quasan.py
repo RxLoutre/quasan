@@ -260,11 +260,12 @@ def polishing(workdir,assembly,reads,tag):
 	final = assembly_path + "/" + polished_assembly + ".fasta"
 	return final
 
-def qc_assembly(assembly,workdir,tag):
+def busco(assembly,workdir):
 	wdir_busco = workdir + "/busco"
-	wdir_quast = workdir + "/quast"
 	wdir_general = multiqc_dir
 	busco_dl = ressources_path + "/busco"
+	name = os.path.basename(assembly)
+	tag, extension = os.path.splitext(name)
 	logger.info('---------- BUSCO STARTED ')
 	try:
 		if(os.path.isfile(assembly)):
@@ -275,9 +276,20 @@ def qc_assembly(assembly,workdir,tag):
 		logger.error(e, exc_info=True)
 		raise
 	logger.info('---------- BUSCO DONE ')
+	logger.info('---------- Gathering essential results files')
+	busco_resume_file = wdir_busco + "/" + tag + "/short_summary.specific." + busco_lineage + "." + tag + ".txt"
+	
+	busco_resume_file_final = wdir_general + "/short_summary.specific." + busco_lineage + "." + tag + ".txt"
+	os.replace(busco_resume_file,busco_resume_file_final)
+	logger.info('---------- Removing extra files.')
+	shutil.rmtree(wdir_busco)
+
+def quast(workdir,fassemblies):
+	wdir_quast = workdir + "/quast"
+	wdir_general = multiqc_dir
 	logger.info('---------- QUAST STARTED ')
 	try:
-		cmd_quast = f"quast -o {wdir_quast} {assembly}"
+		cmd_quast = f"quast -o {wdir_quast} {fassemblies}"
 		subprocess.check_output(cmd_quast, shell=True)
 	except Exception as e:
 		logger.error('---------- Quast ended unexpectedly :( ')
@@ -285,17 +297,13 @@ def qc_assembly(assembly,workdir,tag):
 		raise
 	logger.info('---------- QUAST DONE ')
 	logger.info('---------- Gathering essential results files')
-	busco_resume_file = wdir_busco + "/" + tag + "/short_summary.specific." + busco_lineage + "." + tag + ".txt"
 	quast_html = wdir_quast + "/report.html"
 	quast_tsv = wdir_quast + "/report.tsv"
-	busco_resume_file_final = wdir_general + "/short_summary.specific." + busco_lineage + "." + tag + ".txt"
 	quast_html_final = wdir_general + "/report.html"
 	quast_tsv_final = wdir_general + "/report.tsv"
-	os.replace(busco_resume_file,busco_resume_file_final)
 	os.replace(quast_html,quast_html_final)
 	os.replace(quast_tsv,quast_tsv_final)
 	logger.info('---------- Removing extra files.')
-	shutil.rmtree(wdir_busco)
 	shutil.rmtree(wdir_quast)
 
 def annotation(assembly,workdir):
@@ -427,9 +435,15 @@ def main():
 	#--------------------------MultiQc---------------------------
 	logger.info('----- GENOMES QC STARTED ')
 	assemblies = glob.glob(assembly_dir+'/*.f*a')
+	list_assemblies = ""
 	for assembly in assemblies:
 		logger.debug('---------- Started for {} '.format(assembly))
-		qc_assembly(assembly,assembly_dir,tag)
+		busco(assembly,assembly_dir)
+		to_add = assembly + " "
+		list_assemblies += to_add
+	#If its stupid but it works, then its not stupid
+	#list_assemblies = list_assemblies[:-2]
+	quast(assembly_dir,list_assemblies)
 	logger.info('----- GENOMES QC DONE ')
 	logger.info('----- COMPILING RESULTS WITH MULTIQC')
 	multiqc()	
