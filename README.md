@@ -1,6 +1,6 @@
 # Streptidy
 
-#### 👷🏻‍♀️ Work in progress 🚧
+#### 👷‍♀️ Work in progress 🚧
 
 Streptidy is a pipeline meant to automatically run itself on the [ALICE](https://wiki.alice.universiteitleiden.nl/index.php?title=ALICE_User_Documentation_Wiki) cluster. He will watch over the directory containing the MBT collection, a large collection of exotic _Streptomyces_ genomes, and.. keep it tidy of course 🥁.
 
