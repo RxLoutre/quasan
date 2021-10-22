@@ -76,6 +76,7 @@ ______________________________________________________________________
 	parser.add_argument("-q", "--qualitycheck", help=argparse.SUPPRESS, required=False, action='store_true')
 	parser.add_argument("-as", "--antismash", help=argparse.SUPPRESS, required=False, action='store_true')
 	parser.add_argument("-bs", "--bigscape", help=argparse.SUPPRESS, required=False, action='store_true')
+	parser.add_argument("-t", "--threads", help=argparse.SUPPRESS,required=False, default=16)
 	parser.add_argument("--all", "--all", help=argparse.SUPPRESS, required=False, action='store_true')
 	parser.add_argument("--logfile", "--logfile", help=argparse.SUPPRESS, required=False, default="Quasan.log")
 	parser.add_argument("--debug", "--debug", help=argparse.SUPPRESS, required=False, action='store_true')
@@ -130,7 +131,7 @@ def assembly_illumina(reads,workdir,tag):
 	R1 = reads[0]
 	R2 = reads[1]
 	try:
-		cmd_assembly = f"shovill --outdir {workdir}/shovill --R1 {R1} --R2 {R2} --force"
+		cmd_assembly = f"shovill --cpus {threads} --outdir {workdir}/shovill --R1 {R1} --R2 {R2} --force"
 		final_assembly = workdir + "/shovill/contigs.fa"
 		final_assembly_graph = workdir + "/shovill/contigs.gfa"
 		shovill_assembly = workdir + "/" + tag + "_shovill.fa"
@@ -160,7 +161,7 @@ def qc_illumina(reads):
 	R1 = reads[0]
 	R2 = reads[1]
 	try:
-		cmd_fastqc = f"fastqc {R1} {R2} -o {multiqc_dir} -t 16"
+		cmd_fastqc = f"fastqc {R1} {R2} -o {multiqc_dir} -t {threads}"
 		subprocess.check_output(cmd_fastqc, shell=True)
 	except Exception as e:
 		logger.error('---------- FastQC ended unexpectedly :( ')
@@ -173,7 +174,7 @@ def assembly_pacbio(reads,workdir,tag):
 		if isinstance(reads, list):
 			reads = reads[0]
 		flye_dir = workdir + "/flye"
-		cmd_flye = f"flye --pacbio-raw {reads} --out-dir {flye_dir} --threads 8"
+		cmd_flye = f"flye --pacbio-raw {reads} --out-dir {flye_dir} --threads 16"
 		final_assembly = flye_dir + "/assembly.fasta"
 		final_assembly_graph = flye_dir + "/assembly_graph.gfa"
 		flye_assembly = workdir + "/" + tag + "_flye.fasta"
@@ -225,7 +226,7 @@ def polishing(workdir,assembly,reads,tag):
 		logger.error(e, exc_info=True)
 		raise
 	#Alignement with bowtie
-	cmd_bowtie = f"bowtie2 -x {index} -1 {R1} -2 {R2} -S {sam} -p 8"
+	cmd_bowtie = f"bowtie2 -x {index} -1 {R1} -2 {R2} -S {sam} -p {threads}"
 	logger.info('---------- Starting bowtie2 alignement with command : {}'.format(cmd_bowtie))
 	try:
 		subprocess.check_output(cmd_bowtie, shell=True)
@@ -249,7 +250,7 @@ def polishing(workdir,assembly,reads,tag):
 		logger.error(e, exc_info=True)
 		raise
 	try:
-		cmd_pilon = f"pilon --genome {assembly} --frags {bam_sorted} --output {polished_assembly} --outdir {assembly_path}"
+		cmd_pilon = f"pilon --threads {threads} --genome {assembly} --frags {bam_sorted} --output {polished_assembly} --outdir {assembly_path}"
 		logger.info('---------- Starting Pilon with command : {}'.format(cmd_pilon))
 		subprocess.check_output(cmd_pilon, shell=True)
 	except Exception as e:
@@ -268,7 +269,7 @@ def busco(assembly,workdir):
 	logger.info('---------- BUSCO STARTED ')
 	try:
 		if(os.path.isfile(assembly)):
-			cmd_busco = f"busco -i {assembly} -o {tag} --out_path {wdir_busco} -l {busco_lineage} -m geno --download_path {busco_dl} -f"
+			cmd_busco = f"busco -c {threads} -i {assembly} -o {tag} --out_path {wdir_busco} -l {busco_lineage} -m geno --download_path {busco_dl} -f"
 			subprocess.check_output(cmd_busco, shell=True)
 	except Exception as e:
 		logger.error('---------- Busco ended unexpectedly :( ')
@@ -315,7 +316,7 @@ def annotation(assembly,workdir):
 		name = os.path.basename(assembly)
 		tag, extension = os.path.splitext(name)
 		prefix = tag + "_prokka"
-		cmd_prokka = f"prokka --outdir {workdir} --prefix {prefix} --gcode 11 --cpu 8 --addgenes --rfam --force {assembly}"
+		cmd_prokka = f"prokka --outdir {workdir} --prefix {prefix} --gcode 11 --cpu {threads} --addgenes --rfam --force {assembly}"
 		logger.info('---------- Starting prokka with command : {} .'.format(cmd_prokka))
 		subprocess.check_output(cmd_prokka, shell=True)
 		logger.info('---------- Moving report file to multiqc directory...')
@@ -358,6 +359,8 @@ def main():
 	busco_lineage = "streptomycetales_odb10"
 	global multiqc_dir
 	multiqc_dir = args.indir + "/multiqc"
+	global threads
+	threads = args.threads
 	global sequencing_technologies
 	sequencing_technologies = ['illumina','pacbio','nanopore']
 	reads_folder = args.indir + "/rawdata"
