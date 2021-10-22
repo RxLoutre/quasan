@@ -1,6 +1,6 @@
 # Streptidy
 
-#### 👷‍♀️ Work in progress 🚧
+#### 🚧 Work in progress 🚧
 
 Streptidy is a pipeline meant to automatically run itself on the [ALICE](https://wiki.alice.universiteitleiden.nl/index.php?title=ALICE_User_Documentation_Wiki) cluster. He will watch over the directory containing the MBT collection, a large collection of exotic _Streptomyces_ genomes, and.. keep it tidy of course 🥁.
 
@@ -19,17 +19,17 @@ However you will be able to install Quasan when it is finished. First you would 
 ```bash
 conda create -n quasan
 conda activate quasan
-#Yep, time for a lot of packages
-conda install -c bioconda shovill
-conda install -c bioconda quast
+conda install -n base -c bioconda mamba
+mamba install -c bioconda quast
+mamba install -c bioconda shovill
 conda install -c bioconda fastqc
 conda install -c bioconda multiqc
 conda install -c bioconda busco
 conda install -c bioconda antismash
+conda install -c bioconda perl-bioperl=1.7.2
 conda install -c bioconda prokka
 conda install -c bioconda bam2fastx
 conda install -c bioconda flye
-conda install -c bioconda antismash
 ```
 
 ## Usage

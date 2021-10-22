@@ -30,7 +30,6 @@ ______________________________________________________________________
   big-scape.
   Requires to be ran into a proper conda environment containing all
   the dependencies.
-  DEV : conda activate /Users/roxaneboyer/Bioinformatic/anaconda3/envs/assembly
 ______________________________________________________________________
 Generic command: python3.py [Options]* -D [input dir]
 
@@ -40,8 +39,8 @@ Will behave differently depending on the given options.
 Mandatory arguments:
     -D   Specify the path to the directory for a given strain. The
          directory is expected to have a least this minimal structure :
-         STRAINXX
-         └──raw-reads
+         MY_SPECIEs
+         └──rawdata
             ├── illumina
             ├── (pacbio)
             └── (nanopore)
@@ -57,8 +56,8 @@ Options:
         a GFF3 file that can be used for BCG discovery with AS.
         /!\ Works only if an "assembly" directory exists and contain a
         fasta file.
-    -q  Create a directory named "quality-check" inside the raw-reads
-        directory and perform a quality check of the reads using FastQC
+    -q  Create a directory named "rawdata-QC" and perform a quality check
+	    of the reads using FastQC
     -as Create a directory named "antismash" inside the input directory
         and start the BCG discovery using antismash.
         /!\ Works only if an "annotation" directory exists and contain a
@@ -91,12 +90,12 @@ def return_reads(workdir):
 		if(extension == '.gz'):
 			name, extension = os.path.splitext(name)
 		if(extension == '.fastq' or extension == '.fq'):
-			logger.info('---------- Added fastq file : {} to {} directory'.format(read_file,workdir))
+			logger.info('---------- Added fastq file {} from directory {} '.format(read_file,workdir))
 			reads.append(read_path)
 		#/!\ To be improved in order not to add twice the same fastq if both fastq and bam are present.
 		# Even though downstream we use only the first file	
 		elif(extension == '.bam'):
-			logger.info('---------- Found a bam file : {} , probably from PacBio. Checking if fastq already exist.'.format(read_file))
+			logger.info('---------- Found a bam file {} , probably from PacBio. Checking if fastq already exist.'.format(read_file))
 			converted_reads = workdir + "/" + name + ".fastq.gz"
 			if (os.path.isfile(converted_reads)):
 				logger.info('---------- Corresponding fastq {} already existing, skipping conversion.'.format(converted_reads))
@@ -250,7 +249,7 @@ def polishing(workdir,assembly,reads,tag):
 		logger.error(e, exc_info=True)
 		raise
 	try:
-		cmd_pilon = f"java -Xmx8G -jar {pilon_path}/pilon.jar --genome {assembly} --frags {bam_sorted} --output {polished_assembly} --outdir {assembly_path}"
+		cmd_pilon = f"pilon --genome {assembly} --frags {bam_sorted} --output {polished_assembly} --outdir {assembly_path}"
 		logger.info('---------- Starting Pilon with command : {}'.format(cmd_pilon))
 		subprocess.check_output(cmd_pilon, shell=True)
 	except Exception as e:
@@ -354,17 +353,14 @@ def main():
 	assembly_dir = args.indir + '/assembly'
 	annotation_dir = args.indir + '/annotation'
 	global ressources_path
-	ressources_path = "/Users/roxaneboyer/Bioinformatic/ressources"
+	ressources_path = "/home/boyerr/data_pi-vriesendorpb/ressources/busco"
 	global busco_lineage
 	busco_lineage = "streptomycetales_odb10"
 	global multiqc_dir
 	multiqc_dir = args.indir + "/multiqc"
 	global sequencing_technologies
 	sequencing_technologies = ['illumina','pacbio','nanopore']
-	reads_folder = args.indir + "/raw-reads"
-	#/!\ better way to do this ?
-	global pilon_path
-	pilon_path = "/Users/roxaneboyer/miniconda3/envs/assembly/share/pilon-1.24-0/"
+	reads_folder = args.indir + "/rawdata"
 	#-----------------------Init logging--------------------------
 	try:
 		global logger
@@ -414,14 +410,14 @@ def main():
 		techno_available = reads.keys()
 		assembly_file = ""
 		if ("illumina" in techno_available) and ("pacbio" in techno_available):
-			logger.info('---------- Both Illumina reads and PacBio reads are available, starting hybrid assembly.')
+			logger.info('---------- Both Illumina reads and PacBio reads are available, starting flye assembly + pilon polishing.')
 			assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,tag)
 			assembly_file = polishing(args.indir,assembly_file,reads["illumina"],tag)
 		elif ("illumina" in techno_available):
-			logger.info('---------- Only Illumina reads are available, starting Illumina assembly.')
+			logger.info('---------- Only Illumina reads are available, starting assembly with shovill .')
 			assembly_file = assembly_illumina(reads["illumina"],assembly_dir,tag)
 		elif ("pacbio" in techno_available):
-			logger.info('---------- Only Illumina reads are available, starting Illumina assembly.')
+			logger.info('---------- Only PacBio reads are available, starting assembly with flye.')
 			assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,tag)
 		logger.info('----- ASSEMBLY DONE')
 	
