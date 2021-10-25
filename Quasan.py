@@ -17,6 +17,7 @@ import os
 import shutil
 from typing import Sequence
 import glob
+import datetime
 
 
 def get_arguments():
@@ -24,10 +25,10 @@ def get_arguments():
 	parser = argparse.ArgumentParser(description="",
                                      usage='''
 ______________________________________________________________________
-  Quasan: (Quality - Assembly - Analysis - BCG Discovery )
+  Quasan: (*Qu*ality - *As*sembly - *An*alysis )
   A pipeline for assessing quality of raw Illumina reads, performing
-  assembly steps and starting secondary analysis such as anti-smash and
-  big-scape.
+  assembly steps and starting secondary analysis (such as anti-smash and
+  big-scape).
   Requires to be ran into a proper conda environment containing all
   the dependencies.
 ______________________________________________________________________
@@ -132,20 +133,13 @@ def assembly_illumina(reads,workdir,tag):
 	R2 = reads[1]
 	try:
 		cmd_assembly = f"shovill --cpus {threads} --outdir {workdir}/shovill --R1 {R1} --R2 {R2} --force"
+		#Name of the final output we want to keep in their original folder
 		final_assembly = workdir + "/shovill/contigs.fa"
 		final_assembly_graph = workdir + "/shovill/contigs.gfa"
+		#Renamed file for the final destination with only essentials files
 		shovill_assembly = workdir + "/" + tag + "_shovill.fa"
 		shovill_assembly_graph = workdir + "/" + tag + "_shovill.gfa"
-		if not (os.path.isdir(workdir)):
-			logger.info('---------- Creating folder {}.'.format(workdir))
-			os.mkdir(workdir)
-		else:
-			logger.info('---------- Folder {} already existing, checking if assembly is inside.'.format(workdir))
-			if (os.path.isfile(shovill_assembly)):
-				logger.info('---------- The assembly {} already exist, skipping step.'.format(shovill_assembly))
-				return
-			else:
-				logger.info('---------- Expected file "{}" is not present, starting assembly process.'.format(shovill_assembly))
+		
 		subprocess.check_output(cmd_assembly, shell=True)
 		logger.info('---------- Removing extra files and keeping only fasta files.')
 		os.replace(final_assembly,shovill_assembly)
@@ -175,10 +169,12 @@ def assembly_pacbio(reads,workdir,tag):
 			reads = reads[0]
 		flye_dir = workdir + "/flye"
 		cmd_flye = f"flye --pacbio-raw {reads} --out-dir {flye_dir} --threads 16"
+		#Name of the final output we want to keep in their original folder
 		final_assembly = flye_dir + "/assembly.fasta"
 		final_assembly_graph = flye_dir + "/assembly_graph.gfa"
-		flye_assembly = workdir + "/" + tag + "_flye.fasta"
-		flye_assembly_graph = workdir + "/" + tag + "_flye.gfa"
+		#Renamed file for the final destination with only essentials files
+		flye_assembly = workdir + "/" + tag + ".fasta"
+		flye_assembly_graph = workdir + "/" + tag + ".gfa"
 		if (os.path.isfile(flye_assembly)):
 			logger.info('---------- The assembly {} already exist, skipping step.'.format(flye_assembly))
 			return flye_assembly
@@ -404,23 +400,32 @@ def main():
 	#-----------------------Quality check-----------------------
 	if args.qualitycheck:
 		logger.info('----- READS QC START')
+		#Add a test here for if Illumina or PacBio. meanwhile when you have pacbio data don't use -q
 		qc_illumina(reads["illumina"])
 		logger.info('----- READS QC DONE')
 		
 	#-----------------------Assembly----------------------------
 	if args.assembly:
 		logger.info('----- ASSEMBLY START')
+		if not (os.path.isdir(assembly_dir)):
+			logger.info('---------- Creating folder {}.'.format(assembly_dir))
+			os.mkdir(assembly_dir)
+		ndate = datetime.datetime.now()
+		version = ndate.strftime("V%d.%m.%y")
 		techno_available = reads.keys()
 		assembly_file = ""
 		if ("illumina" in techno_available) and ("pacbio" in techno_available):
 			logger.info('---------- Both Illumina reads and PacBio reads are available, starting flye assembly + pilon polishing.')
+			tag = version + "_" + "hybrid_flye-pilon_" + tag
 			assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,tag)
 			assembly_file = polishing(args.indir,assembly_file,reads["illumina"],tag)
 		elif ("illumina" in techno_available):
 			logger.info('---------- Only Illumina reads are available, starting assembly with shovill .')
+			tag = version + "_" + "illumina_shovill_" + tag
 			assembly_file = assembly_illumina(reads["illumina"],assembly_dir,tag)
 		elif ("pacbio" in techno_available):
 			logger.info('---------- Only PacBio reads are available, starting assembly with flye.')
+			tag = version + "_" + "pacbio_flye_" + tag
 			assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,tag)
 		logger.info('----- ASSEMBLY DONE')
 	
