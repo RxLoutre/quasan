@@ -330,6 +330,14 @@ def annotation(assembly,workdir):
 		logger.error(e, exc_info=True)
 		raise
 
+def antismash(assembly,workdir,tag):
+	cmd_antismash = f"antismash --genefinding-tool prodigal --cpus {threads} --clusterhmmer --tigrfam --smcog-trees --cb-general --cb-subcluster --cb-knownclusters --asf --rre --cc-mibig --output-dir {workdir} --html-title {tag} {assembly}"
+	try:
+		subprocess.check_output(cmd_antismash, shell=True)
+	except Exception as e:
+		logger.error('---------- Antismash ended unexpectedly :( ')
+		logger.error(e, exc_info=True)
+		raise
 def multiqc():
 	try:
 		cmd_multiqc = f"multiqc {multiqc_dir} -o {multiqc_dir} -f"

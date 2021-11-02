@@ -14,18 +14,18 @@ Here will be some nice pictures soon
 
 Streptidy is a custom script not meant to be exported.  
 
-However you will be able to install Quasan when it is finished. First you would need to prepare an appropriate conda environment (or maybe I will do that for you, but I don't know for now) : 
+However you will be able to install Quasan when it is finished. First you would need to prepare an appropriate conda environment, yes the order matters : 
 
 ```bash
+conda install -n base -c bioconda mamba
 conda create -n quasan
 conda activate quasan
-conda install -n base -c bioconda mamba
 mamba install -c bioconda quast
+mamba install -c bioconda antismash
 mamba install -c bioconda shovill
 conda install -c bioconda fastqc
 conda install -c bioconda multiqc
 conda install -c bioconda busco
-conda install -c bioconda antismash
 conda install -c bioconda perl-bioperl=1.7.2
 conda install -c bioconda prokka
 conda install -c bioconda bam2fastx
