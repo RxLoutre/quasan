@@ -249,7 +249,7 @@ def polishing(workdir,assembly,reads,tag,args):
 
 def busco(assembly,workdir,outdir,args):
 	wdir_busco = workdir + "/busco"
-	busco_dl = ressources_path
+	busco_dl = args.ressources_path
 	name = os.path.basename(assembly)
 	tag, extension = os.path.splitext(name)
 	logger.info('---------- BUSCO STARTED ')
@@ -347,8 +347,6 @@ def main():
 	assembly_dir = args.indir + '/assembly'
 	annotation_dir = args.indir + '/annotation'
 	multiqc_dir = args.indir + '/multiqc'
-	global ressources_path
-	ressources_path = "/home/boyerr/data_pi-vriesendorpb/ressources/busco"
 	global sequencing_technologies
 	sequencing_technologies = ['illumina','pacbio','nanopore']
 	reads_folder = args.indir + "/rawdata"
