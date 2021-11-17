@@ -2,7 +2,7 @@
 
 #### 🚧 Work in progress 🚧
 
-Streptidy is a pipeline meant to automatically run itself on the [ALICE](https://wiki.alice.universiteitleiden.nl/index.php?title=ALICE_User_Documentation_Wiki) cluster. He will watch over the directory containing the MBT collection, a large collection of exotic _Streptomyces_ genomes, and.. keep it tidy of course 🥁.
+Streptidy is a pipeline meant to automatically run itself on the [ILis] (IBL Linux Server). It will watch over the directory containing a in house _streptomyces_  genomes collection, and.. keep it tidy of course 🥁.
 
 Streptidy will start from a directory filled with raw reads, and then make use of the python script **Quasan** (**Qu**ality **As**sembly **An**notation)
 
@@ -12,24 +12,11 @@ Here will be some nice pictures soon
 
 ## Installation
 
-Streptidy is a custom script not meant to be exported.  
-
-However you will be able to install Quasan when it is finished. First you would need to prepare an appropriate conda environment, yes the order matters : 
-
 ```bash
+#If mamba already not in base environment
 conda install -n base -c bioconda mamba
-conda create -n quasan
-conda activate quasan
-mamba install -c bioconda quast
-mamba install -c bioconda antismash
-mamba install -c bioconda shovill
-conda install -c bioconda fastqc
-conda install -c bioconda multiqc
-conda install -c bioconda busco
-conda install -c bioconda perl-bioperl=1.7.2
-conda install -c bioconda prokka
-conda install -c bioconda bam2fastx
-conda install -c bioconda flye
+#Use the provided yaml file to create the environment easily
+conda env create -f quasan.yml
 ```
 
 ## Usage

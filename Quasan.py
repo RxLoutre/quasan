@@ -41,7 +41,7 @@ ______________________________________________________________________
 Generic command: python3 Quasan.py [Options]* -D [input_dir]
 
 Mandatory arguments:
-    -D   Specify the path to the directory for a given strain. The
+    -d   Specify the path to the directory for a given strain. The
          directory is expected to have a least this minimal structure :
          MY_SPECIE
          └──rawdata
@@ -62,7 +62,7 @@ Options:
 
 ______________________________________________________________________
 ''')
-	parser.add_argument("-D", "--indir", help="The input directory where input reads are and output files will be generated according to the folder sturcture system.", required=True)
+	parser.add_argument("-d", "--indir", help="The input directory where input reads are and output files will be generated according to the folder sturcture system.", required=True)
 	parser.add_argument("-as", "--antismash", help="Start the pipeline onlt from the antismash step.", default=False, action='store_true')
 	parser.add_argument("-b", "--buscoLineage", help="The busco lineage to calculate genome completeness against (default : streptomycetales_odb10)", required=False, default="streptomycetales_odb10")
 	parser.add_argument("-r", "--ressources", help="The ressources folder where to download busco information (default : \"/vol/local/ressources\", when ran on ILis)", required=False, default="/vol/local/ressources")	
@@ -424,30 +424,29 @@ def main():
 		for assembly in assemblies:
 			logger.info('---------- Starting annotation for assembly {}'.format(assembly))
 			annotation(assembly,annotation_dir,args)
+		#--------------------------MultiQc---------------------------
+		logger.info('----- GENOMES QC STARTED ')
+		assemblies = glob.glob(assembly_dir+'/*.f*a')
+		list_assemblies = ""
+		for assembly in assemblies:
+			logger.debug('---------- Started for {} '.format(assembly))
+			busco(assembly,assembly_dir,multiqc_dir,args)
+			to_add = assembly + " "
+			list_assemblies += to_add
+			#If its stupid but it works, then its not stupid
+			#Why did I wrote this
+			#list_assemblies = list_assemblies[:-2]
+		quast(assembly_dir,list_assemblies,multiqc_dir)
+		logger.info('----- GENOMES QC DONE ')
+		logger.info('----- COMPILING RESULTS WITH MULTIQC')
+		multiqc(multiqc_dir)	
 	else:
 		#Initialize all variable needed for antismash without starting the whole pipeline
-		print("init")
+		print("init to do yet")
 	#------------------------Antismash---------------------------
 	#Starting here antismash
-	print("Hello")
-
-			
-	#--------------------------MultiQc---------------------------
-	logger.info('----- GENOMES QC STARTED ')
-	assemblies = glob.glob(assembly_dir+'/*.f*a')
-	list_assemblies = ""
-	for assembly in assemblies:
-		logger.debug('---------- Started for {} '.format(assembly))
-		busco(assembly,assembly_dir,multiqc_dir,args)
-		to_add = assembly + " "
-		list_assemblies += to_add
-	#If its stupid but it works, then its not stupid
-	#Why did I wrote this
-	#list_assemblies = list_assemblies[:-2]
-	quast(assembly_dir,list_assemblies,multiqc_dir)
-	logger.info('----- GENOMES QC DONE ')
-	logger.info('----- COMPILING RESULTS WITH MULTIQC')
-	multiqc(multiqc_dir)	
+	logger.info('--- Starting BGC discoveries ! ')
+	logger.info('--- Second part : Antismash ')
 	logger.info('----------------------Quasan has ended  (•̀ᴗ•́)و -------------------' )
 
 if __name__ == '__main__':
