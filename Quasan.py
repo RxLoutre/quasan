@@ -249,7 +249,7 @@ def polishing(workdir,assembly,reads,tag,args):
 
 def busco(assembly,workdir,outdir,args):
 	wdir_busco = workdir + "/busco"
-	busco_dl = ressources_path + "/busco"
+	busco_dl = ressources_path
 	name = os.path.basename(assembly)
 	tag, extension = os.path.splitext(name)
 	logger.info('---------- BUSCO STARTED ')
