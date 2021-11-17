@@ -423,7 +423,7 @@ def main():
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
 		for assembly in assemblies:
 			logger.info('---------- Starting annotation for assembly {}'.format(assembly))
-			annotation(assembly,annotation_dir,args)
+			annotation(assembly,annotation_dir,multiqc_dir,args)
 		#--------------------------MultiQc---------------------------
 		logger.info('----- GENOMES QC STARTED ')
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
