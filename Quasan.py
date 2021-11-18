@@ -68,6 +68,8 @@ ______________________________________________________________________
 	parser.add_argument("-r", "--ressources", help="The ressources folder where to download busco information (default : \"/vol/local/ressources\", when ran on ILis)", required=False, default="/vol/local/ressources")	
 	parser.add_argument("-t", "--threads", help="The number of thread to use when using external tools (default : 8)",required=False, default=8)
 	parser.add_argument("-l", "--logfile", help="The file you want to write the log at (default : ./Quasan.log)", required=False, default="Quasan.log")
+	parser.add_argument("-m", "--memory", help="The maximum memory to use for all the steps (default : 16)", required=False, default=16)
+	parser.add_argument("-e", "--estimatedGenomeSize", help="The genome size you expect (default : 7,5M)", required=False, default="7.5m")
 	parser.add_argument("--debug", "--debug", help="Debug mode to print more informations in the log.", required=False, action='store_true')
 	return (parser.parse_args())
  
@@ -120,7 +122,7 @@ def assembly_illumina(reads,workdir,tag,args):
 	R1 = reads[0]
 	R2 = reads[1]
 	try:
-		cmd_assembly = f"shovill --cpus {args.threads} --outdir {workdir}/shovill --R1 {R1} --R2 {R2} --force"
+		cmd_assembly = f"shovill --cpus {args.threads} --outdir {workdir}/shovill --R1 {R1} --R2 {R2} --force --gsize {args.estimatedGenomeSize}"
 		#Name of the final output we want to keep in their original folder
 		final_assembly = workdir + "/shovill/contigs.fa"
 		final_assembly_graph = workdir + "/shovill/contigs.gfa"
@@ -159,7 +161,7 @@ def assembly_pacbio(reads,workdir,tag,args):
 		if isinstance(reads, list):
 			reads = reads[0]
 		flye_dir = workdir + "/flye"
-		cmd_flye = f"flye --pacbio-raw {reads} --out-dir {flye_dir} --threads {args.threads}"
+		cmd_flye = f"flye --pacbio-raw {reads} --out-dir {flye_dir} --threads {args.threads} --genome-size {args.estimatedGenomeSize}"
 		#Name of the final output we want to keep in their original folder
 		final_assembly = flye_dir + "/assembly.fasta"
 		final_assembly_graph = flye_dir + "/assembly_graph.gfa"
@@ -346,6 +348,7 @@ def main():
 	tag = os.path.basename(args.indir)
 	assembly_dir = args.indir + '/assembly'
 	annotation_dir = args.indir + '/annotation'
+	antismash_dir = args.indir + '/antismash'
 	multiqc_dir = args.indir + '/multiqc'
 	global sequencing_technologies
 	sequencing_technologies = ['illumina','pacbio','nanopore']
@@ -440,11 +443,14 @@ def main():
 		multiqc(multiqc_dir)	
 	else:
 		#Initialize all variable needed for antismash without starting the whole pipeline
-		print("init to do yet")
+		assemblies = glob.glob(assembly_dir+'/*.f*a')
 	#------------------------Antismash---------------------------
 	#Starting here antismash
-	logger.info('--- Starting BGC discoveries ! ')
 	logger.info('--- Second part : Antismash ')
+	logger.info('----- BGC DISCOVERY STARTED ')
+	for assembly in assemblies:
+		logger.debug('---------- Started for {} '.format(assembly))
+		antismash(assembly,antismash_dir,tag,args)
 	logger.info('----------------------Quasan has ended  (•̀ᴗ•́)و -------------------' )
 
 if __name__ == '__main__':
