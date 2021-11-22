@@ -161,7 +161,7 @@ def assembly_pacbio(reads,workdir,tag,args):
 		if isinstance(reads, list):
 			reads = reads[0]
 		flye_dir = workdir + "/flye"
-		cmd_flye = f"flye --pacbio-raw {reads} --out-dir {flye_dir} --threads {args.threads} --genome-size {args.estimatedGenomeSize}"
+		cmd_flye = f"flye --pacbio-raw {reads} --out-dir {flye_dir} --threads {args.threads} --genome-size {args.estimatedGenomeSize} --asm-coverage 50"
 		#Name of the final output we want to keep in their original folder
 		final_assembly = flye_dir + "/assembly.fasta"
 		final_assembly_graph = flye_dir + "/assembly_graph.gfa"
