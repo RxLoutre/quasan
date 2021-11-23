@@ -64,7 +64,7 @@ ______________________________________________________________________
 ''')
 	parser.add_argument("-d", "--indir", help="The input directory where input reads are and output files will be generated according to the folder sturcture system.", required=True)
 	parser.add_argument("-as", "--antismash", help="Start the pipeline onlt from the antismash step.", default=False, action='store_true')
-	parser.add_argument("-b", "--buscoLineage", help="The busco lineage to calculate genome completeness against (default : streptomycetales_odb10)", required=False, default="streptomycetales_odb10")
+	parser.add_argument("-b", "--buscoLineage", help="The busco lineage to calculate genome completeness against (default : actinobacteria_class_odb10)", required=False, default="actinobacteria_class_odb10")
 	parser.add_argument("-r", "--ressources", help="The ressources folder where to download busco information (default : \"/vol/local/ressources\", when ran on ILis)", required=False, default="/vol/local/ressources")	
 	parser.add_argument("-t", "--threads", help="The number of thread to use when using external tools (default : 8)",required=False, default=8)
 	parser.add_argument("-l", "--logfile", help="The file you want to write the log at (default : ./Quasan.log)", required=False, default="Quasan.log")
@@ -295,9 +295,8 @@ def quast(workdir,fassemblies,outdir):
 	logger.info('---------- Removing extra files.')
 	shutil.rmtree(wdir_quast)
 
-def annotation(assembly,workdir,outdir,args):
+def annotation(assembly,workdir,outdir,tag,args):
 	species="sp."
-	strain = os.path.basename(workdir)
 	centre = "MBT"
 	try:
 		if not (os.path.isdir(workdir)):
@@ -308,7 +307,7 @@ def annotation(assembly,workdir,outdir,args):
 		name = os.path.basename(assembly)
 		tag, extension = os.path.splitext(name)
 		prefix = tag + "_prokka"
-		cmd_prokka = f"prokka --compliant --centre {centre} --genus {args.genus} --species {species} --strain {strain} --outdir {workdir} --prefix {prefix} --gcode 11 --cpu {args.threads} --locustag \"{strain}_LOCUS_TAG\" --addgenes --gram {args.gram} --rfam --force {assembly}"
+		cmd_prokka = f"prokka --compliant --centre {centre} --genus {args.genus} --species {species} --strain {tag} --outdir {workdir} --prefix {prefix} --gcode 11 --cpu {args.threads} --locustag \"{tag}_LOCUS_TAG\" --addgenes --gram {args.gram} --rfam --force {assembly}"
 		logger.info('---------- Starting prokka with command : {} .'.format(cmd_prokka))
 		subprocess.check_output(cmd_prokka, shell=True)
 		logger.info('---------- Moving report file to multiqc directory...')
@@ -429,7 +428,7 @@ def main():
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
 		for assembly in assemblies:
 			logger.info('---------- Starting annotation for assembly {}'.format(assembly))
-			annotation(assembly,annotation_dir,multiqc_dir,args)
+			annotation(assembly,annotation_dir,multiqc_dir,tag,args)
 		#--------------------------MultiQc---------------------------
 		logger.info('----- GENOMES QC STARTED ')
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
