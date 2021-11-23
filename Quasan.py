@@ -70,6 +70,7 @@ ______________________________________________________________________
 	parser.add_argument("-l", "--logfile", help="The file you want to write the log at (default : ./Quasan.log)", required=False, default="Quasan.log")
 	parser.add_argument("-m", "--memory", help="The maximum memory to use for all the steps (default : 16)", required=False, default=16)
 	parser.add_argument("-e", "--estimatedGenomeSize", help="The genome size you expect (default : 7,5M)", required=False, default="7.5m")
+	parser.add_argument("-g", "--gram", help="The gram type of the bacteria (pos/neg). Default = pos", required=False, default="pos")
 	parser.add_argument("--debug", "--debug", help="Debug mode to print more informations in the log.", required=False, action='store_true')
 	return (parser.parse_args())
  
@@ -303,7 +304,7 @@ def annotation(assembly,workdir,outdir,args):
 		name = os.path.basename(assembly)
 		tag, extension = os.path.splitext(name)
 		prefix = tag + "_prokka"
-		cmd_prokka = f"prokka --outdir {workdir} --prefix {prefix} --gcode 11 --cpu {args.threads} --addgenes --rfam --force {assembly}"
+		cmd_prokka = f"prokka --outdir {workdir} --prefix {prefix} --gcode 11 --cpu {args.threads} --locustag \"LOCUS_TAG\" --addgenes --gram {args.gram} --rfam --force {assembly}"
 		logger.info('---------- Starting prokka with command : {} .'.format(cmd_prokka))
 		subprocess.check_output(cmd_prokka, shell=True)
 		logger.info('---------- Moving report file to multiqc directory...')
