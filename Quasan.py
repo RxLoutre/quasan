@@ -295,7 +295,7 @@ def quast(workdir,fassemblies,outdir):
 	logger.info('---------- Removing extra files.')
 	shutil.rmtree(wdir_quast)
 
-def annotation(assembly,workdir,outdir,tag,args):
+def annotation(assembly,workdir,outdir,tag,assembly_version,args):
 	species="sp."
 	centre = "MBT"
 	try:
@@ -305,8 +305,7 @@ def annotation(assembly,workdir,outdir,tag,args):
 		else:
 			logger.info('---------- Folder {} already existing.'.format(workdir))
 		name = os.path.basename(assembly)
-		tag, extension = os.path.splitext(name)
-		prefix = tag + "_prokka"
+		prefix = assembly_version + "_prokka"
 		cmd_prokka = f"prokka --compliant --centre {centre} --genus {args.genus} --species {species} --strain {tag} --outdir {workdir} --prefix {prefix} --gcode 11 --cpu {args.threads} --locustag \"{tag}_LOCUS_TAG\" --addgenes --gram {args.gram} --rfam --force {assembly}"
 		logger.info('---------- Starting prokka with command : {} .'.format(cmd_prokka))
 		subprocess.check_output(cmd_prokka, shell=True)
@@ -411,16 +410,16 @@ def main():
 		assembly_file = ""
 		if ("illumina" in techno_available) and ("pacbio" in techno_available):
 			logger.info('---------- Both Illumina reads and PacBio reads are available, starting flye assembly + pilon polishing.')
-			tag = version + "_" + "hybrid_flye-pilon_" + tag
+			assembly_version = version + "_" + "hybrid_flye-pilon_" + tag
 			assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,tag,args)
 			assembly_file = polishing(args.indir,assembly_file,reads["illumina"],tag)
 		elif ("illumina" in techno_available):
 			logger.info('---------- Only Illumina reads are available, starting assembly with shovill .')
-			tag = version + "_" + "illumina_shovill_" + tag
+			assembly_version = version + "_" + "illumina_shovill_" + tag
 			assembly_file = assembly_illumina(reads["illumina"],assembly_dir,tag,args)
 		elif ("pacbio" in techno_available):
 			logger.info('---------- Only PacBio reads are available, starting assembly with flye.')
-			tag = version + "_" + "pacbio_flye_" + tag
+			assembly_version = version + "_" + "pacbio_flye_" + tag
 			assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,tag,args)
 		logger.info('----- ASSEMBLY DONE')
 		#-----------------------Annotation---------------------------
@@ -428,7 +427,7 @@ def main():
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
 		for assembly in assemblies:
 			logger.info('---------- Starting annotation for assembly {}'.format(assembly))
-			annotation(assembly,annotation_dir,multiqc_dir,tag,args)
+			annotation(assembly,annotation_dir,multiqc_dir,tag,assembly_version,args)
 		#--------------------------MultiQc---------------------------
 		logger.info('----- GENOMES QC STARTED ')
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
