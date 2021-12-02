@@ -18,6 +18,8 @@ import shutil
 from typing import Sequence
 import glob
 import datetime
+import re
+import sys
 
 
 def get_arguments():
@@ -119,10 +121,52 @@ def parse_reads(workdir):
 			logger.debug("---------- Technology {} detected but not supported yet.".format(technology))
 	return reads
 
+def concat_reads_illumina(workdir,reads):
+	R1_reads = []
+	R2_reads = []
+	pattern1_R1=".*_R?1_.*\.f(ast)?q(.gz)?"
+	pattern2_R1=".*R?1\.f(ast)?q(.gz)?"
+	pattern1_R2=".*_R?2_.*\.f(ast)?q(.gz)?"
+	pattern2_R2=".*R?2\.f(ast)?q(.gz)?"
+	concat_R1_filename = workdir + "/concat_R1.fq.gz"
+	concat_R2_filename = workdir + "/concat_R2.fq.gz"
+	for read in reads:
+		if((re.match(pattern1_R1,read)) or (re.match(pattern2_R1,read))):
+			logger.info("---------- Read {} is a R1 file.".format(read))
+			R1_reads.append(read)
+		elif((re.match(pattern1_R2,read)) or (re.match(pattern2_R2,read))):
+			logger.info("---------- Read {} is a R2 file.".format(read))
+			R2_reads.append(read)
+		else:
+			logger.error("---------- Format type of the file {} could not be recognized :(.".format(read))
+			logger.error("---------- Only two types of pattern are recognized : .*_R?1_.*\.f(ast)?q(.gz)? or .*R?1\.f(ast)?q(.gz)? (same for R2)".format(read))
+			logger.error("---------- Please make your read name correspond to one of those pattern and try again. See Quasan doc for more information".format(read))
+			sys.exit("There was a problem with recognizing the read {} strandedness as it does not match any pattern. Look into Quasan.log for more".format(read))
+	#Concatenate all R1 together and all R2 together, in correct order hopefully
+	try:
+		with open(concat_R1_filename,'wb') as wfp1:
+			for fn in R1_reads:
+				with open(fn, 'rb') as rfp:
+					shutil.copyfileobj(rfp, wfp1)
+		with open(concat_R2_filename,'wb') as wfp2:
+			for fn in R2_reads:
+				with open(fn, 'rb') as rfp:
+					shutil.copyfileobj(rfp, wfp2)
+		return concat_R1_filename,concat_R2_filename
+	except Exception as e:
+		logger.error("-------- Concat_reads failed to concatenate :( ")
+      	logger.error(e, exc_info=True)
+      	sys.exit("Concat_reads failed to concatenate :(")
+	
+
 #/!\ Make a common part for both assemblies ?
 def assembly_illumina(reads,workdir,tag,args):
-	R1 = reads[0]
-	R2 = reads[1]
+	reads_files_nb = len(reads)
+	if (reads_files_nb > 2):
+		R1, R2 = concat_reads_illumina(workdir,reads)
+	else:
+		R1 = reads[0]
+		R2 = reads[1]
 	try:
 		cmd_assembly = f"shovill --cpus {args.threads} --outdir {workdir}/shovill --R1 {R1} --R2 {R2} --force --gsize {args.estimatedGenomeSize}"
 		#Name of the final output we want to keep in their original folder
