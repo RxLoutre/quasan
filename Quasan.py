@@ -155,8 +155,8 @@ def concat_reads_illumina(workdir,reads):
 		return concat_R1_filename,concat_R2_filename
 	except Exception as e:
 		logger.error("-------- Concat_reads failed to concatenate :( ")
-      	logger.error(e, exc_info=True)
-      	sys.exit("Concat_reads failed to concatenate :(")
+		logger.error(e, exc_info=True)
+		sys.exit("Concat_reads failed to concatenate :(")
 	
 
 #/!\ Make a common part for both assemblies ?
