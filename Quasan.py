@@ -183,6 +183,11 @@ def assembly_illumina(reads,workdir,tag,args):
 		logger.info('---------- Removing extra files and keeping only fasta files.')
 		os.replace(final_assembly,shovill_assembly)
 		os.replace(final_assembly_graph,shovill_assembly_graph)
+		#if there is a concat files, remove it !
+		if(os.path.isfile(workdir + "/concat_R1.fq.gz")):
+			os.remove(workdir + "/concat_R1.fq.gz")
+		if(os.path.isfile(workdir + "/concat_R2.fq.gz")):
+			os.remove(workdir + "/concat_R2.fq.gz")
 		shutil.rmtree(workdir+"/shovill")
 		return shovill_assembly
 	except Exception as e:
