@@ -148,10 +148,12 @@ def concat_reads_illumina(workdir,reads):
 			for fn in R1_reads:
 				with open(fn, 'rb') as rfp:
 					shutil.copyfileobj(rfp, wfp1)
+		logger.info("-------- Concatenated all R1 reads into {} ".format(concat_R1_filename))
 		with open(concat_R2_filename,'wb') as wfp2:
 			for fn in R2_reads:
 				with open(fn, 'rb') as rfp:
 					shutil.copyfileobj(rfp, wfp2)
+		logger.info("-------- Concatenated all R2 reads into {} ".format(concat_R2_filename))
 		return concat_R1_filename,concat_R2_filename
 	except Exception as e:
 		logger.error("-------- Concat_reads failed to concatenate :( ")
@@ -188,6 +190,10 @@ def assembly_illumina(reads,workdir,tag,args):
 		raise
 		
 def qc_illumina(reads,outdir,args):
+	reads_files_nb = len(reads)
+	#if (reads_files_nb > 2):
+		#R1, R2 = concat_reads_illumina(workdir,reads)
+	#else:
 	R1 = reads[0]
 	R2 = reads[1]
 	logger.info('----- READS QC START')
@@ -207,7 +213,7 @@ def assembly_pacbio(reads,workdir,tag,args):
 		if isinstance(reads, list):
 			reads = reads[0]
 		flye_dir = workdir + "/flye"
-		cmd_flye = f"flye --pacbio-raw {reads} --out-dir {flye_dir} --threads {args.threads} --genome-size {args.estimatedGenomeSize} --asm-coverage 50"
+		cmd_flye = f"flye --pacbio-raw {reads} --out-dir {flye_dir} --threads {args.threads} --asm-coverage 50"
 		#Name of the final output we want to keep in their original folder
 		final_assembly = flye_dir + "/assembly.fasta"
 		final_assembly_graph = flye_dir + "/assembly_graph.gfa"
