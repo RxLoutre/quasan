@@ -131,8 +131,8 @@ def find_R_reads(reads,strand):
 			R_reads.append(read)
 		else:
 			logger.error("---------- Format type of the file {} could not be recognized :(.".format(read))
-			logger.error("---------- Only two types of pattern are recognized : .*_R?1_.*\.f(ast)?q(.gz)? or .*R?1\.f(ast)?q(.gz)? (same for R2)".format(read))
-			logger.error("---------- Please make your read name correspond to one of those pattern and try again. See Quasan doc for more information".format(read))
+			logger.error("---------- Only two types of pattern are recognized : {} or {} (same for R2)".format(pattern1_R,pattern2_R))
+			logger.error("---------- Please make your read name correspond to one of those pattern and try again. See Quasan doc for more information")
 			sys.exit("There was a problem with recognizing the read {} strandedness as it does not match any pattern. Look into Quasan.log for more".format(read))
 	return R_reads
 
@@ -141,8 +141,8 @@ def concat_reads_illumina(workdir,reads):
 	R2_reads = []
 	concat_R1_filename = workdir + "/concat_R1.fq.gz"
 	concat_R2_filename = workdir + "/concat_R2.fq.gz"
-	R1_reads = find_R_reads(reads,"1")
-	R2_reads = find_R_reads(reads,"2")		
+	R1_reads = find_R_reads(reads,1)
+	R2_reads = find_R_reads(reads,2)		
 	#Concatenate all R1 together and all R2 together, in correct order hopefully
 	try:
 		with open(concat_R1_filename,'wb') as wfp1:
