@@ -121,27 +121,28 @@ def parse_reads(workdir):
 			logger.debug("---------- Technology {} detected but not supported yet.".format(technology))
 	return reads
 
-def concat_reads_illumina(workdir,reads):
-	R1_reads = []
-	R2_reads = []
-	pattern1_R1=".*_R?1_.*\.f(ast)?q(.gz)?"
-	pattern2_R1=".*R?1\.f(ast)?q(.gz)?"
-	pattern1_R2=".*_R?2_.*\.f(ast)?q(.gz)?"
-	pattern2_R2=".*R?2\.f(ast)?q(.gz)?"
-	concat_R1_filename = workdir + "/concat_R1.fq.gz"
-	concat_R2_filename = workdir + "/concat_R2.fq.gz"
+def find_R_reads(reads,strand):
+	R_reads = []
+	pattern1_R=".*_R?{strand}_.*\.f(ast)?q(.gz)?"
+	pattern2_R=".*R?{strand}\.f(ast)?q(.gz)?"
 	for read in reads:
-		if((re.match(pattern1_R1,read)) or (re.match(pattern2_R1,read))):
-			logger.info("---------- Read {} is a R1 file.".format(read))
-			R1_reads.append(read)
-		elif((re.match(pattern1_R2,read)) or (re.match(pattern2_R2,read))):
-			logger.info("---------- Read {} is a R2 file.".format(read))
-			R2_reads.append(read)
+		if((re.match(pattern1_R,read)) or (re.match(pattern2_R,read))):
+			logger.info("---------- Read {} is a R{} file.".format(read,strand))
+			R_reads.append(read)
 		else:
 			logger.error("---------- Format type of the file {} could not be recognized :(.".format(read))
 			logger.error("---------- Only two types of pattern are recognized : .*_R?1_.*\.f(ast)?q(.gz)? or .*R?1\.f(ast)?q(.gz)? (same for R2)".format(read))
 			logger.error("---------- Please make your read name correspond to one of those pattern and try again. See Quasan doc for more information".format(read))
 			sys.exit("There was a problem with recognizing the read {} strandedness as it does not match any pattern. Look into Quasan.log for more".format(read))
+	return R_reads
+
+def concat_reads_illumina(workdir,reads):
+	R1_reads = []
+	R2_reads = []
+	concat_R1_filename = workdir + "/concat_R1.fq.gz"
+	concat_R2_filename = workdir + "/concat_R2.fq.gz"
+	R1_reads = find_R_reads(reads,"1")
+	R2_reads = find_R_reads(reads,"2")		
 	#Concatenate all R1 together and all R2 together, in correct order hopefully
 	try:
 		with open(concat_R1_filename,'wb') as wfp1:
@@ -188,19 +189,22 @@ def assembly_illumina(reads,workdir,tag,args):
 		logger.error('---------- Shovill ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
-		
+
 def qc_illumina(reads,outdir,args):
-	reads_files_nb = len(reads)
-	#if (reads_files_nb > 2):
-		#R1, R2 = concat_reads_illumina(workdir,reads)
-	#else:
-	R1 = reads[0]
-	R2 = reads[1]
+	reads_files_nb = len(reads) // 2
+	R1_reads = []
+	R2_reads = []
+	R1_reads = find_R_reads(reads,"1")
+	R2_reads = find_R_reads(reads,"2")
 	logger.info('----- READS QC START')
 	try:
-		#Fancy command to check if fastqc files already exist to skip fastqc again ? nah too much problems
-		cmd_fastqc = f"fastqc {R1} {R2} -o {outdir} -t {args.threads}"
-		subprocess.check_output(cmd_fastqc, shell=True)
+		for i in range(0,reads_files_nb):
+			R1 = R1_reads[i]
+			R2 = R2_reads[i]
+			cmd_fastqc = f"fastqc {R1} {R2} -o {outdir} -t {args.threads}"
+			logger.info('-------- Starting command : {}'.format(cmd_fastqc))
+			logger.debug('-------- i = {}'.format(i))
+			subprocess.check_output(cmd_fastqc, shell=True)
 		logger.info('----- READS QC ENDED')
 	except Exception as e:
 		logger.error('---------- FastQC ended unexpectedly :( ')
@@ -242,6 +246,7 @@ def assembly_pacbio(reads,workdir,tag,args):
 		raise
 
 def polishing(workdir,assembly,reads,tag,args):
+	#/!\ Think of when several reads are there too
 	R1 = reads[0]
 	R2 = reads[1]
 	#Making an index out of the freshly made assembly
@@ -461,16 +466,16 @@ def main():
 		if ("illumina" in techno_available) and ("pacbio" in techno_available):
 			logger.info('---------- Both Illumina reads and PacBio reads are available, starting flye assembly + pilon polishing.')
 			assembly_version = version + "_" + "hybrid_flye-pilon_" + tag
-			assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,tag,args)
+			assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,assembly_version,args)
 			assembly_file = polishing(args.indir,assembly_file,reads["illumina"],tag)
 		elif ("illumina" in techno_available):
 			logger.info('---------- Only Illumina reads are available, starting assembly with shovill .')
 			assembly_version = version + "_" + "illumina_shovill_" + tag
-			assembly_file = assembly_illumina(reads["illumina"],assembly_dir,tag,args)
+			assembly_file = assembly_illumina(reads["illumina"],assembly_dir,assembly_version,args)
 		elif ("pacbio" in techno_available):
 			logger.info('---------- Only PacBio reads are available, starting assembly with flye.')
 			assembly_version = version + "_" + "pacbio_flye_" + tag
-			assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,tag,args)
+			assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,assembly_version,args)
 		logger.info('----- ASSEMBLY DONE')
 		#-----------------------Annotation---------------------------
 		logger.info('----- ANNOTATION START')
