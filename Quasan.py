@@ -123,8 +123,8 @@ def parse_reads(workdir):
 
 def find_R_reads(reads,strand):
 	R_reads = []
-	pattern1_R=".*_R?{strand}_.*\.f(ast)?q(.gz)?"
-	pattern2_R=".*R?{strand}\.f(ast)?q(.gz)?"
+	pattern1_R=".*_R?{}_.*\.f(ast)?q(.gz)?".format(strand)
+	pattern2_R=".*R?{}\.f(ast)?q(.gz)?".format(strand)
 	for read in reads:
 		if((re.match(pattern1_R,read)) or (re.match(pattern2_R,read))):
 			logger.info("---------- Read {} is a R{} file.".format(read,strand))
