@@ -7,7 +7,7 @@ RESSOURCES="/vol/local/ressources"
 GENUS="Streptomyces"
 MEMORY=16
 CPU=16
-LOG=$SCRIPTD_DIR"/Streptidy.log"
+LOG=$SCRIPTS_DIR"/Streptidy.log"
 
 #********************FUNCTIONS**********************
 echolog (){

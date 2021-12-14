@@ -7,7 +7,7 @@ RESSOURCES="/Users/roxaneboyer/Bioinformatic/ressources"
 GENUS="Streptomyces"
 MEMORY=8
 CPU=8
-LOG=$SCRIPTD_DIR"/Streptidy.log"
+LOG=$SCRIPTS_DIR"/Streptidy.log"
 
 #********************FUNCTIONS**********************
 echolog (){
