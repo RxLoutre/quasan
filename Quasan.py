@@ -65,7 +65,7 @@ Options:
 ______________________________________________________________________
 ''')
 	parser.add_argument("-d", "--indir", help="The input directory where input reads are and output files will be generated according to the folder sturcture system.", required=True)
-	parser.add_argument("-as", "--antismash", help="Start the pipeline onlt from the antismash step.", default=False, action='store_true')
+	parser.add_argument("-as", "--antismash", help="Start the pipeline only from the antismash step.", default=False, action='store_true')
 	parser.add_argument("-b", "--buscoLineage", help="The busco lineage to calculate genome completeness against (default : actinobacteria_phylum_odb10)", required=False, default="actinobacteria_phylum_odb10")
 	parser.add_argument("-r", "--ressources", help="The ressources folder where to download busco information (default : \"/vol/local/ressources\", when ran on ILis)", required=False, default="/vol/local/ressources")	
 	parser.add_argument("-t", "--threads", help="The number of thread to use when using external tools (default : 8)",required=False, default=8)

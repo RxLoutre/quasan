@@ -1,12 +1,12 @@
 #********************PARAMETERS**********************
-COLLECTION_DIR="/vol/local/streptomyces-collection"
-SCRIPTS_DIR="/vol/local/streptidy"
+COLLECTION_DIR="/Users/roxaneboyer/Bioinformatic/data/mbt_genomes/mbt-training-collection"
+SCRIPTS_DIR="/Users/roxaneboyer/Bioinformatic/scripts/streptidy"
 GENOME_SIZE="7.5m"
 GRAM="pos"
-RESSOURCES="/vol/local/ressources"
+RESSOURCES="/Users/roxaneboyer/Bioinformatic/ressources"
 GENUS="Streptomyces"
-MEMORY=16
-CPU=16
+MEMORY=8
+CPU=8
 LOG=$SCRIPTD_DIR"/Streptidy.log"
 
 #********************FUNCTIONS**********************
