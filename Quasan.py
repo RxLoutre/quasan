@@ -465,7 +465,7 @@ def main():
 		ndate = datetime.datetime.now()
 		version = ndate.strftime("V%d.%m.%y")
 		assembly_file = ""
-		gbk = ""
+		assembly_version = ""
 		if ("illumina" in techno_available) and ("pacbio" in techno_available):
 			logger.info('---------- Both Illumina reads and PacBio reads are available, starting flye assembly + pilon polishing.')
 			assembly_version = version + "_" + "hybrid_flye-pilon_" + tag
@@ -483,6 +483,7 @@ def main():
 		#-----------------------Annotation---------------------------
 		logger.info('----- ANNOTATION START')
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
+		gbk = annotation_dir + "/" + assembly_version + "_prokka.gbk"
 		for assembly in assemblies:
 			logger.info('---------- Starting annotation for assembly {}'.format(assembly))
 			annotation(assembly,annotation_dir,multiqc_dir,tag,assembly_version,args)
@@ -495,9 +496,6 @@ def main():
 			busco(assembly,assembly_dir,multiqc_dir,args)
 			to_add = assembly + " "
 			list_assemblies += to_add
-			#If its stupid but it works, then its not stupid
-			#Why did I wrote this
-			#list_assemblies = list_assemblies[:-2]
 		quast(assembly_dir,list_assemblies,multiqc_dir)
 		logger.info('----- GENOMES QC DONE ')
 		logger.info('----- COMPILING RESULTS WITH MULTIQC')
@@ -511,7 +509,6 @@ def main():
 	logger.info('----- BGC DISCOVERY STARTED ')
 	for assembly in assemblies:
 		logger.debug('---------- Started for {} '.format(assembly))
-		gbk = annotation_dir + "/" + assembly_version + "_prokka.gbk"
 		logger.debug('----- GBK file is here : {}'.format(gbk))
 		antismash(gbk,antismash_dir,tag,args)
 	logger.info('----------------------Quasan has ended  (•̀ᴗ•́)و -------------------' )
