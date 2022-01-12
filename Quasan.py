@@ -376,7 +376,6 @@ def annotation(assembly,workdir,outdir,tag,assembly_version,args):
 			fout.write(line.replace('strain',tag))
 		fin.close()
 		fout.close()
-		return(gbk)
 	except Exception as e:
 		logger.error('---------- Prokka ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
@@ -486,7 +485,7 @@ def main():
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
 		for assembly in assemblies:
 			logger.info('---------- Starting annotation for assembly {}'.format(assembly))
-			gbk = annotation(assembly,annotation_dir,multiqc_dir,tag,assembly_version,args)
+			annotation(assembly,annotation_dir,multiqc_dir,tag,assembly_version,args)
 		#--------------------------MultiQc---------------------------
 		logger.info('----- GENOMES QC STARTED ')
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
@@ -512,6 +511,8 @@ def main():
 	logger.info('----- BGC DISCOVERY STARTED ')
 	for assembly in assemblies:
 		logger.debug('---------- Started for {} '.format(assembly))
+		gbk = annotation_dir + "/" + assembly_version + "_prokka.gbk"
+		logger.debug('----- GBK file is here : {}'.format(gbk))
 		antismash(gbk,antismash_dir,tag,args)
 	logger.info('----------------------Quasan has ended  (•̀ᴗ•́)و -------------------' )
 
