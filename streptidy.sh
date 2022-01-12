@@ -19,7 +19,6 @@ do
     m) MAIL=$OPTARG
 	esac
 done
-shift $((OPTIND -1))
 
 #If test mode, then we run in local mode
 if (( $TEST == 1 ))
@@ -29,7 +28,7 @@ else
     source config.sh
 fi
 
-echolog "streptidy" "*******************Streptidy awaken*****************"
+echolog "streptidy" "*******************Streptidy awakens*****************"
 
 #Retrieve all versions informations for all important tools
 ENV_INFO=$(conda list)
@@ -46,7 +45,7 @@ for STRAIN in "${STRAINS[@]}"; do
     #Verify this strain exist
     SOURCE=$COLLECTION_DIR_LOCAL"/"$STRAIN
     DESTINATION=$COLLECTION_DIR_REMOTE"/"$STRAIN
-    
+
     RCLONE_LOG=$LOG_DIR"/"$STRAIN"_rclone.log"
     echolog "streptidy" "-- Checking differences between local collection and remote collection (RD)"
     rclone check --log-file $RCLONE_LOG $SOURCE $DESTINATION

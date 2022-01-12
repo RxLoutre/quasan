@@ -367,6 +367,7 @@ def annotation(assembly,workdir,outdir,tag,assembly_version,args):
 		subprocess.check_output(cmd_prokka, shell=True)
 		logger.info('---------- Moving report file to multiqc directory...')
 		report = workdir + "/" + prefix + ".txt"
+		gbk = workdir + "/" + prefix + ".gbk"
 		logger.debug('---------- Prokkas report : {}'.format(report))
 		report_mqc = outdir + "/" + prefix + ".txt"
 		fin = open(report,"rt")
@@ -375,13 +376,14 @@ def annotation(assembly,workdir,outdir,tag,assembly_version,args):
 			fout.write(line.replace('strain',tag))
 		fin.close()
 		fout.close()
+		return(gbk)
 	except Exception as e:
 		logger.error('---------- Prokka ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
 		raise
 
-def antismash(assembly,workdir,tag,args):
-	cmd_antismash = f"antismash --genefinding-tool prodigal --cpus {args.threads} --clusterhmmer --tigrfam --smcog-trees --cb-general --cb-subcluster --cb-knownclusters --asf --rre --cc-mibig --output-dir {workdir} --html-title {tag} {assembly}"
+def antismash(gbk,workdir,tag,args):
+	cmd_antismash = f"antismash --genefinding-tool none --cpus {args.threads} --clusterhmmer --tigrfam --smcog-trees --cb-general --cb-subcluster --cb-knownclusters --asf --rre --cc-mibig --output-dir {workdir} --html-title {tag} {gbk}"
 	try:
 		subprocess.check_output(cmd_antismash, shell=True)
 	except Exception as e:
@@ -483,7 +485,7 @@ def main():
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
 		for assembly in assemblies:
 			logger.info('---------- Starting annotation for assembly {}'.format(assembly))
-			annotation(assembly,annotation_dir,multiqc_dir,tag,assembly_version,args)
+			gbk = annotation(assembly,annotation_dir,multiqc_dir,tag,assembly_version,args)
 		#--------------------------MultiQc---------------------------
 		logger.info('----- GENOMES QC STARTED ')
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
@@ -509,7 +511,7 @@ def main():
 	logger.info('----- BGC DISCOVERY STARTED ')
 	for assembly in assemblies:
 		logger.debug('---------- Started for {} '.format(assembly))
-		antismash(assembly,antismash_dir,tag,args)
+		antismash(gbk,antismash_dir,tag,args)
 	logger.info('----------------------Quasan has ended  (•̀ᴗ•́)و -------------------' )
 
 if __name__ == '__main__':
