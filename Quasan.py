@@ -484,8 +484,6 @@ def main():
 		#-----------------------Annotation---------------------------
 		logger.info('----- ANNOTATION START')
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
-		gbk = annotation_dir + "/" + assembly_version + "_prokka.gbk"
-		logger.debug('----- GBK file is here : {}'.format(gbk))
 		for assembly in assemblies:
 			logger.info('---------- Starting annotation for assembly {}'.format(assembly))
 			annotation(assembly,annotation_dir,multiqc_dir,tag,assembly_version,args)
@@ -507,11 +505,13 @@ def main():
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
 	#------------------------Antismash---------------------------
 	#Starting here antismash
+	list_gbk = glob.glob(annotation_dir+'/*.gbk')
+	latest_gbk = max(list_gbk, key=os.path.getctime)
 	logger.info('--- Second part : Antismash ')
 	logger.info('----- BGC DISCOVERY STARTED ')
 	for assembly in assemblies:
 		logger.debug('---------- Started for {} '.format(assembly))
-		antismash(gbk,antismash_dir,tag,args)
+		antismash(latest_gbk,antismash_dir,tag,args)
 	logger.info('----------------------Quasan has ended  (•̀ᴗ•́)و -------------------' )
 
 if __name__ == '__main__':
