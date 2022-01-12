@@ -466,6 +466,7 @@ def main():
 		ndate = datetime.datetime.now()
 		version = ndate.strftime("V%d.%m.%y")
 		assembly_file = ""
+		gbk = ""
 		if ("illumina" in techno_available) and ("pacbio" in techno_available):
 			logger.info('---------- Both Illumina reads and PacBio reads are available, starting flye assembly + pilon polishing.')
 			assembly_version = version + "_" + "hybrid_flye-pilon_" + tag
