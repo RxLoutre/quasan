@@ -450,15 +450,16 @@ def main():
 	logger.info('----- PARSING READS')
 	reads = parse_reads(reads_folder)
 	techno_available = reads.keys()
-	if ("illumina" in techno_available):
-		qc_illumina(reads["illumina"],multiqc_dir,args)
 	#Maybe one day I will find a nice PacBio QC tool but I doubt it, not a prioritu for now
 	#-----------------------Check mode--------------------------
 	if not args.antismash:
 		logger.info('--- Starting the pipeline from the begining ! ')
-		logger.info('--- First part : Assembly -> Annotation -> QC ')
+		logger.info('--- First part : Reads QC -> Assembly -> Annotation -> QC ')
 		#-----------------------Assembly----------------------------
-		logger.info('----- Assembly starts')
+		logger.info('----- QC STARTS')
+		if ("illumina" in techno_available):
+			qc_illumina(reads["illumina"],multiqc_dir,args)
+		logger.info('----- ASSEMBLY STARRS')
 		if not (os.path.isdir(assembly_dir)):
 			logger.info('---------- Creating folder {}.'.format(assembly_dir))
 			os.mkdir(assembly_dir)
@@ -484,6 +485,7 @@ def main():
 		logger.info('----- ANNOTATION START')
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
 		gbk = annotation_dir + "/" + assembly_version + "_prokka.gbk"
+		logger.debug('----- GBK file is here : {}'.format(gbk))
 		for assembly in assemblies:
 			logger.info('---------- Starting annotation for assembly {}'.format(assembly))
 			annotation(assembly,annotation_dir,multiqc_dir,tag,assembly_version,args)
@@ -509,7 +511,6 @@ def main():
 	logger.info('----- BGC DISCOVERY STARTED ')
 	for assembly in assemblies:
 		logger.debug('---------- Started for {} '.format(assembly))
-		logger.debug('----- GBK file is here : {}'.format(gbk))
 		antismash(gbk,antismash_dir,tag,args)
 	logger.info('----------------------Quasan has ended  (•̀ᴗ•́)و -------------------' )
 
