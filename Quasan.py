@@ -247,9 +247,12 @@ def assembly_pacbio(reads,workdir,tag,args):
 		raise
 
 def polishing(workdir,assembly,reads,tag,args):
-	#/!\ Think of when several reads are there too
-	R1 = reads[0]
-	R2 = reads[1]
+	reads_files_nb = len(reads)
+	if (reads_files_nb > 2):
+		R1, R2 = concat_reads_illumina(workdir,reads)
+	else:
+		R1 = reads[0]
+		R2 = reads[1]
 	#Making an index out of the freshly made assembly
 	alignement_dir = workdir + "/alignement"
 	assembly_path = workdir + "/assembly"
@@ -362,7 +365,7 @@ def annotation(assembly,workdir,outdir,tag,assembly_version,args):
 			logger.info('---------- Folder {} already existing.'.format(workdir))
 		name = os.path.basename(assembly)
 		prefix = assembly_version + "_prokka"
-		cmd_prokka = f"prokka --compliant --centre {centre} --genus {args.genus} --species {species} --strain {tag} --outdir {workdir} --prefix {prefix} --gcode 11 --cpu {args.threads} --locustag \"{tag}_LOCUS_TAG\" --addgenes --gram {args.gram} --rfam --force {assembly}"
+		cmd_prokka = f"prokka --centre {centre} --genus {args.genus} --species {species} --strain {tag} --outdir {workdir} --prefix {prefix} --gcode 11 --cpu {args.threads} --locustag \"{tag}_TAG\" --addgenes --gram {args.gram} --rfam --force {assembly}"
 		logger.info('---------- Starting prokka with command : {} .'.format(cmd_prokka))
 		subprocess.check_output(cmd_prokka, shell=True)
 		logger.info('---------- Moving report file to multiqc directory...')
