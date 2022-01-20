@@ -400,7 +400,7 @@ def annotation_pgap(assembly,workdir,tag,assembly_version,args):
 	# Args are given to access various options for the tool as well as the number of threads
 	#Create a name for a temp outdir for PGAP results
 	temp_workdir = workdir + "/" + tag
-	temp_assembly = temp_workdir + "/" + tag + "_genomics.fasta"
+	temp_assembly = workdir + "/" + tag + "_genomics.fasta"
 	yml_input_file = workdir + "/input.yml"
 	yml_submol_file = workdir + "/submol.yml"
 	yml_input = {'fasta': {'class': 'File', 'location': temp_assembly}, 'submol': {'class': 'File', 'location': yml_submol_file}}
