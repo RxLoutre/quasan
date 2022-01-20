@@ -398,8 +398,17 @@ def annotation_pgap(assembly,workdir,tag,assembly_version,args):
 	# Annotate the asseembly {assembly} and produce its results in the folder {workdir}
 	# using {tag} as the strain name and {assembly_version} as the output files name.
 	# Args are given to access various options for the tool as well as the number of threads
-	yml_input = {'fasta': {'class': 'File', 'location': assembly}, 'submol': {'class': 'File', 'location': workdir+'/submol.yaml'}}
+	#yml_input = {'fasta': {'class': 'File', 'location': assembly}, 'submol': {'class': 'File', 'location': workdir+'/submol.yaml'}}
 	yml_submol = {'organism': {'genus_species': 'Streptomyces', 'strain': tag}, 'comment': 'Annotated locally by PGAP within pipeline Streptidy V1.0', 'bioproject': args.bioproject, 'biosample': args.biosample, 'locus_tag_prefix': args.locustag}
+	yml_input = yaml.safe_load("""
+	organism:
+		genus_species: 'Streptomyces'
+		strain: 'MBT9999'
+	comment: 'Annotated locally by PGAP within pipeline Streptidy V1.0'
+	bioproject: 'PRJNA9999999'
+	biosample: 'SAMN99999999'
+	locus_tag_prefix: 'pgaptmp'
+	""")
 	yml_input_file = workdir + "/input.yml"
 	yml_submol_file = workdir + "/submol.yml"
 	try:
