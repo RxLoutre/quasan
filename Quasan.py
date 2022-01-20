@@ -369,7 +369,7 @@ def annotation_prokka(assembly,workdir,report_dir,tag,assembly_version,args):
 		#-----------------Prep steps------------------
 		if not (os.path.isdir(workdir)):
 			logger.info('---------- Creating folder {} .'.format(workdir))
-			os.mkdir(workdir)
+			os.makedirs(workdir)
 		else:
 			logger.info('---------- Folder {} already existing.'.format(workdir))
 		prefix = assembly_version + "_prokka"
@@ -404,9 +404,14 @@ def annotation_pgap(assembly,workdir,tag,assembly_version,args):
 	yml_submol_file = workdir + "/submol.yml"
 	try:
 		#-----------------Prep steps------------------
+		if not (os.path.isdir(workdir)):
+			logger.info('---------- Creating folder {} .'.format(workdir))
+			os.makedirs(workdir)
+		else:
+			logger.info('---------- Folder {} already existing.'.format(workdir))
 		#Create a name for a temp outdir for PGAP results
 		temp_workdir = workdir + "/" + tag
-		if (os.path.isdir(workdir)):
+		if (os.path.isdir(temp_workdir)):
 			logger.warning('---------- Folder {} already existing.'.format(temp_workdir))
 			logger.warning('---------- PGAP will probably don\'t like that, we better remove it')
 			os.rmdir(temp_workdir)
