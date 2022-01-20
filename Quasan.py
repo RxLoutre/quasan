@@ -419,10 +419,10 @@ def annotation_pgap(assembly,workdir,tag,assembly_version,args):
 		#Create the yaml files needed for pgap
 		logger.info('---------- Creating input yaml file : {}'.format(yml_input_file))		
 		with open(yml_input_file, 'w') as file:
-			yaml.dump(yml_input,file)
+			yaml.dump(yml_input,file,default_flow_style=False)
 		logger.info('---------- Creating submol yaml file : {}'.format(yml_submol_file))		
 		with open(yml_submol_file, 'w') as file:
-			yaml.dump(yml_submol,file)		
+			yaml.dump(yml_submol,file,default_flow_style=False)		
 		#---------------Annotation--------------------
 		cmd_pgap = f"python3 {pgap_dir}/pgap.py -n -o {temp_workdir} {yml_input_file} --no-internet -D singularity -c {args.threads}"
 		logger.info('---------- Starting PGAP with command : {} .'.format(cmd_pgap))
