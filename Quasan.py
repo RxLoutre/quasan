@@ -78,7 +78,7 @@ ______________________________________________________________________
 	parser.add_argument("-s", "--genus", help="The genus of the bacteria. Default = Streptomyces", required=False, default="Streptomyces")
 	parser.add_argument("--bioproject", "--bioproject", help="If annotation must be submitted to the NCBI, use this option to mention the correct bioproject (Default : PRJNA9999999).", default="PRJNA9999999")
 	parser.add_argument("--biosample", "--biosample", help="If annotation must be submitted to the NCBI, use this option to mention the correct biosample (Default : SAMN99999999).", default="SAMN99999999")
-	parser.add_argument("--locustag", "--locustag", help="If annotation must be submitted to the NCBI, use this option to mention the correct locus_tag (Default : TMP).", default="TMP")
+	parser.add_argument("--locustag", "--locustag", help="If annotation must be submitted to the NCBI, use this option to mention the correct locus_tag (Default : TMLOC).", default="TMLOC")
 	return (parser.parse_args())
  
 def return_reads(workdir):
@@ -359,22 +359,30 @@ def quast(workdir,fassemblies,outdir):
 	shutil.rmtree(wdir_quast)
 
 def annotation_prokka(assembly,workdir,report_dir,tag,assembly_version,args):
+	# Annotate the asseembly {assembly} and produce its results in the folder {workdir}
+	# using {tag} as the strain name and {assembly_version} as the output files name.
+	# {report_dir} is passed to store some files used by multiqc for the end assessment of the assembly quality
+	# Args are given to access various options for the tool as well as the number of threads
 	species="sp."
 	centre = "MBT"
 	try:
+		#-----------------Prep steps------------------
 		if not (os.path.isdir(workdir)):
 			logger.info('---------- Creating folder {} .'.format(workdir))
 			os.mkdir(workdir)
 		else:
 			logger.info('---------- Folder {} already existing.'.format(workdir))
 		prefix = assembly_version + "_prokka"
+		#---------------Annotation--------------------
 		cmd_prokka = f"prokka --centre {centre} --genus {args.genus} --species {species} --strain {tag} --outdir {workdir} --prefix {prefix} --gcode 11 --cpu {args.threads} --locustag {args.locustag} --addgenes --gram {args.gram} --rfam --force {assembly}"
 		logger.info('---------- Starting prokka with command : {} .'.format(cmd_prokka))
 		subprocess.check_output(cmd_prokka, shell=True)
+		#-----------------Cleaning up-----------------
 		logger.info('---------- Moving report file to multiqc directory...')
 		report = workdir + "/" + prefix + ".txt"
 		logger.debug('---------- Prokkas report : {}'.format(report))
 		report_mqc = report_dir + "/" + prefix + ".txt"
+		#Rename in the file multiqc the word "strain" by the actual {tag} so it's easier to read in the reports
 		fin = open(report,"rt")
 		fout = open(report_mqc,"wt")
 		for line in fin:
@@ -387,28 +395,45 @@ def annotation_prokka(assembly,workdir,report_dir,tag,assembly_version,args):
 		raise
 
 def annotation_pgap(assembly,workdir,tag,assembly_version,args):
+	# Annotate the asseembly {assembly} and produce its results in the folder {workdir}
+	# using {tag} as the strain name and {assembly_version} as the output files name.
+	# Args are given to access various options for the tool as well as the number of threads
 	yml_input = [{'fasta': {'class': 'File', 'location': assembly}, 'submol': {'class': 'File', 'location': workdir/'submol.yaml'}}]
 	yml_submol = [{'organism': {'genus_species': 'Streptomyces', 'strain': tag}, 'comment': 'Annotated locally by PGAP within pipeline Streptidy V1.0', 'bioproject': args.bioproject, 'biosample': args.biosample, 'locus_tag_prefix': args.locustag}]
 	yml_input_file = workdir + "/input.yml"
 	yml_submol_file = workdir + "/submol.yml"
 	try:
 		#-----------------Prep steps------------------
-		if not (os.path.isdir(workdir)):
-			logger.info('---------- Creating folder {} .'.format(workdir))
-			os.mkdir(workdir)
-		else:
-			logger.info('---------- Folder {} already existing.'.format(workdir))
+		#Create a name for a temp outdir for PGAP results
+		temp_workdir = workdir + "/" + tag
+		if (os.path.isdir(workdir)):
+			logger.warning('---------- Folder {} already existing.'.format(temp_workdir))
+			logger.warning('---------- PGAP will probably don\'t like that, we better remove it')
+			os.rmdir(temp_workdir)
+		prefix = assembly_version + "_pgap"
 		#Create the yaml files needed for pgap
 		logger.info('---------- Creating input yaml file : {}'.format(yml_input_file))		
 		with open(yml_input_file, 'w') as file:
 			yaml.dump(yml_input,file)
 		logger.info('---------- Creating submol yaml file : {}'.format(yml_submol_file))		
 		with open(yml_submol_file, 'w') as file:
-			yaml.dump(yml_submol,file)
-		
+			yaml.dump(yml_submol,file)		
 		#---------------Annotation--------------------
-		prefix = assembly_version + "_pgap"
-		cmd_pgap = f"python3 {pgap_dir}/pgap.py -n -o {workdir} {yml_input_file} --no-internet -D singularity -c {args.threads}"
+		cmd_pgap = f"python3 {pgap_dir}/pgap.py -n -o {temp_workdir} {yml_input_file} --no-internet -D singularity -c {args.threads}"
+		logger.info('---------- Starting PGAP with command : {} .'.format(cmd_pgap))
+		subprocess.check_output(cmd_pgap, shell=True)
+		#-----------------Cleaning up-----------------
+		logger.info('---------- Cleaning up temporary files !')
+		#Removing the yamls files
+		os.remove(yml_input_file)
+		os.remove(yml_submol_file)
+		#Renaming files we want to keep and move them in workdir
+		os.replace(temp_workdir+"/annot.faa",workdir+"/"+prefix+".faa")
+		os.replace(temp_workdir+"/annot.gbk",workdir+"/"+prefix+".gbk")
+		os.replace(temp_workdir+"/annot.gff",workdir+"/"+prefix+".gff")
+		os.replace(temp_workdir+"/annot.sqn",workdir+"/"+prefix+".sqn")
+		shutil.rmtree(temp_workdir)
+
 	except Exception as e:
 		logger.error('---------- PGAP ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
@@ -524,7 +549,8 @@ def main():
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
 		for assembly in assemblies:
 			logger.info('---------- Starting prokka annotation for assembly {}'.format(assembly))
-			annotation_prokka(assembly,annotation_dir,multiqc_dir,tag,assembly_version,args)
+			annotation_prokka(assembly,annotation_dir+"/prokka",multiqc_dir,tag,assembly_version,args)
+			annotation_pgap(assembly,annotation_dir+"/pgap",tag,assembly_version,args)
 		#--------------------------MultiQc---------------------------
 		logger.info('----- GENOMES QC STARTED ')
 		assemblies = glob.glob(assembly_dir+'/*.f*a')
