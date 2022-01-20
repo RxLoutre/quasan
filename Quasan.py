@@ -398,9 +398,12 @@ def annotation_pgap(assembly,workdir,tag,assembly_version,args):
 	# Annotate the asseembly {assembly} and produce its results in the folder {workdir}
 	# using {tag} as the strain name and {assembly_version} as the output files name.
 	# Args are given to access various options for the tool as well as the number of threads
+	#Create a name for a temp outdir for PGAP results
+	temp_workdir = workdir + "/" + tag
+	temp_assembly = temp_workdir + "/" + tag + "_genomics.fasta"
 	yml_input_file = workdir + "/input.yml"
 	yml_submol_file = workdir + "/submol.yml"
-	yml_input = {'fasta': {'class': 'File', 'location': assembly}, 'submol': {'class': 'File', 'location': yml_submol_file}}
+	yml_input = {'fasta': {'class': 'File', 'location': temp_assembly}, 'submol': {'class': 'File', 'location': yml_submol_file}}
 	yml_submol = {'organism': {'genus_species': 'Streptomyces', 'strain': tag}, 'comment': 'Annotated locally by PGAP within pipeline Streptidy V1.0', 'bioproject': args.bioproject, 'biosample': args.biosample, 'locus_tag_prefix': args.locustag}
 	try:
 		#-----------------Prep steps------------------
@@ -409,8 +412,6 @@ def annotation_pgap(assembly,workdir,tag,assembly_version,args):
 			os.makedirs(workdir)
 		else:
 			logger.info('---------- Folder {} already existing.'.format(workdir))
-		#Create a name for a temp outdir for PGAP results
-		temp_workdir = workdir + "/" + tag
 		if (os.path.isdir(temp_workdir)):
 			logger.warning('---------- Folder {} already existing.'.format(temp_workdir))
 			logger.warning('---------- PGAP will probably don\'t like that, we better remove it')
@@ -425,7 +426,9 @@ def annotation_pgap(assembly,workdir,tag,assembly_version,args):
 		file = open(yml_submol_file, 'w')
 		yaml.dump(yml_submol,file,default_flow_style=False,sort_keys=False)
 		file.close()
-
+		#Copy assembly file for PGAP not to complain
+		logger.info('---------- Copying assembly file for his highness PGAP... : {}'.format(assembly))
+		shutil.copyfile(assembly,temp_assembly)
 		#---------------Annotation--------------------
 		cmd_pgap = f"python3 {pgap_dir}/pgap.py -n -o {temp_workdir} {yml_input_file} --no-internet -D singularity -c {args.threads}"
 		logger.info('---------- Starting PGAP with command : {} .'.format(cmd_pgap))
