@@ -398,17 +398,8 @@ def annotation_pgap(assembly,workdir,tag,assembly_version,args):
 	# Annotate the asseembly {assembly} and produce its results in the folder {workdir}
 	# using {tag} as the strain name and {assembly_version} as the output files name.
 	# Args are given to access various options for the tool as well as the number of threads
-	#yml_input = {'fasta': {'class': 'File', 'location': assembly}, 'submol': {'class': 'File', 'location': workdir+'/submol.yaml'}}
+	yml_input = {'fasta': {'class': 'File', 'location': assembly}, 'submol': {'class': 'File', 'location': workdir+'/submol.yaml'}}
 	yml_submol = {'organism': {'genus_species': 'Streptomyces', 'strain': tag}, 'comment': 'Annotated locally by PGAP within pipeline Streptidy V1.0', 'bioproject': args.bioproject, 'biosample': args.biosample, 'locus_tag_prefix': args.locustag}
-	yml_input = yaml.safe_load("""
-	organism:
-		genus_species: 'Streptomyces'
-		strain: 'MBT9999'
-	comment: 'Annotated locally by PGAP within pipeline Streptidy V1.0'
-	bioproject: 'PRJNA9999999'
-	biosample: 'SAMN99999999'
-	locus_tag_prefix: 'pgaptmp'
-	""")
 	yml_input_file = workdir + "/input.yml"
 	yml_submol_file = workdir + "/submol.yml"
 	try:
@@ -427,11 +418,14 @@ def annotation_pgap(assembly,workdir,tag,assembly_version,args):
 		prefix = assembly_version + "_pgap"
 		#Create the yaml files needed for pgap
 		logger.info('---------- Creating input yaml file : {}'.format(yml_input_file))		
-		with open(yml_input_file, 'w') as file:
-			yaml.dump(yml_input,file,default_flow_style=False)
+		file = open(yml_input_file, 'w')
+		yaml.dump(yml_input,file,default_flow_style=False,sort_keys=False)
+		file.close()
 		logger.info('---------- Creating submol yaml file : {}'.format(yml_submol_file))		
-		with open(yml_submol_file, 'w') as file:
-			yaml.dump(yml_submol,file,default_flow_style=False)		
+		file = open(yml_submol_file, 'w')
+		yaml.dump(yml_submol,file,default_flow_style=False,sort_keys=False)
+		file.close()
+
 		#---------------Annotation--------------------
 		cmd_pgap = f"python3 {pgap_dir}/pgap.py -n -o {temp_workdir} {yml_input_file} --no-internet -D singularity -c {args.threads}"
 		logger.info('---------- Starting PGAP with command : {} .'.format(cmd_pgap))
