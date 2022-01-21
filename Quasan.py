@@ -239,9 +239,10 @@ def assembly_pacbio(reads,workdir,tag,args):
 				os.mkdir(flye_dir)
 		logger.info('---------- Starting now Flye with command : {} '.format(cmd_flye))
 		subprocess.check_output(cmd_flye, shell=True)
-		logger.info('---------- Removing extra files and keeping only fasta files.')
+		logger.info('---------- Cleaning up extra files...')
 		os.replace(final_assembly,flye_assembly)
 		os.replace(final_assembly_graph,flye_assembly_graph)
+		os.replace(flye_dir+"/assembly_info.txt",workdir + "/" + tag + "_assembly_info.txt")
 		shutil.rmtree(workdir+"/flye")
 		logger.info('---------- Produced assembly {flye_assembly}, yaaay !')
 		return flye_assembly
