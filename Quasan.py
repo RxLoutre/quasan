@@ -404,7 +404,7 @@ def annotation_pgap(assembly,workdir,tag,assembly_version,args):
 	temp_assembly = workdir + "/" + tag + "_genomics.fasta"
 	yml_input_file = workdir + "/input.yml"
 	yml_submol_file = workdir + "/submol.yml"
-	yml_input = {'fasta': {'class': 'File', 'location': temp_assembly}, 'submol': {'class': 'File', 'location': yml_submol_file}}
+	yml_input = {'fasta': {'class': 'File', 'location': tag + "_genomics.fasta"}, 'submol': {'class': 'File', 'location': yml_submol_file}}
 	yml_submol = {'organism': {'genus_species': 'Streptomyces', 'strain': tag}, 'comment': 'Annotated locally by PGAP within pipeline Streptidy V1.0', 'bioproject': args.bioproject, 'biosample': args.biosample, 'locus_tag_prefix': args.locustag}
 	try:
 		#-----------------Prep steps------------------
