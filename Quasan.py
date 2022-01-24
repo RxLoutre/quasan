@@ -437,8 +437,9 @@ def annotation_pgap(assembly,workdir,tag,assembly_version,args):
 		#-----------------Cleaning up-----------------
 		logger.info('---------- Cleaning up temporary files !')
 		#Removing the yamls files
-		os.remove(yml_input_file)
-		os.remove(yml_submol_file)
+		list_yaml = glob.glob(workdir+'/*.yaml')
+		for yaml in list_yaml:
+			os.remove(yaml)
 		#Renaming files we want to keep and move them in workdir
 		os.replace(temp_workdir+"/annot.faa",workdir+"/"+prefix+".faa")
 		os.replace(temp_workdir+"/annot.gbk",workdir+"/"+prefix+".gbk")
