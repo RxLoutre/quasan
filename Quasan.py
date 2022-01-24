@@ -563,9 +563,7 @@ def main():
 		#-----------------------Annotation---------------------------
 		logger.info('--- Second part : Annotation -> QC ')
 		logger.info('----- ANNOTATION START')
-		#/!\ Is it really a good thing to do annotation for all assemblies ? Or just the current assembly ?
-		#I don't remember the exact reasons I have done that in the past
-		assemblies = glob.glob(assembly_dir+'/.*\.fn?a(sta)?$')
+		assemblies = glob.glob(assembly_dir+'/*.fna') + glob.glob(assembly_dir+'/*.fa') + glob.glob(assembly_dir+'/*.fasta')
 		latest_assembly = max(assemblies, key=os.path.getctime)
 		logger.debug('---------- Using latest assembly for annotation : '.format(latest_assembly))
 		annotation_prokka(latest_assembly,annotation_dir+"/prokka",multiqc_dir,tag,assembly_version,args)
@@ -594,3 +592,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+os.list
