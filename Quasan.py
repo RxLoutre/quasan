@@ -340,6 +340,8 @@ def busco(assembly,workdir,outdir,args):
 	shutil.rmtree(wdir_busco)
 
 def quast(workdir,fassemblies,outdir):
+	# Perform basic statistics (N50, number of contigs etc) on the given assembly file list {fassemblies}
+	# Write its output in the {outdir} directory
 	wdir_quast = workdir + "/quast"
 	logger.info('---------- QUAST STARTED ')
 	try:
@@ -563,14 +565,13 @@ def main():
 		logger.info('----- ANNOTATION START')
 		#/!\ Is it really a good thing to do annotation for all assemblies ? Or just the current assembly ?
 		#I don't remember the exact reasons I have done that in the past
-		assemblies = glob.glob(assembly_dir+'/*.f*a')
-		for assembly in assemblies:
-			logger.info('---------- Starting prokka annotation for assembly {}'.format(assembly))
-			annotation_prokka(assembly,annotation_dir+"/prokka",multiqc_dir,tag,assembly_version,args)
-			annotation_pgap(assembly,annotation_dir+"/pgap",tag,assembly_version,args)
+		assemblies = glob.glob(assembly_dir+'/.*\.fn?a(sta)?$')
+		latest_assembly = max(assemblies, key=os.path.getctime)
+		logger.debug('---------- Using latest assembly for annotation : '.format(latest_assembly))
+		annotation_prokka(latest_assembly,annotation_dir+"/prokka",multiqc_dir,tag,assembly_version,args)
+		annotation_pgap(latest_assembly,annotation_dir+"/pgap",tag,assembly_version,args)
 		#--------------------------MultiQc---------------------------
 		logger.info('----- GENOMES QC STARTED ')
-		assemblies = glob.glob(assembly_dir+'/*.f*a')
 		list_assemblies = ""
 		for assembly in assemblies:
 			logger.debug('---------- Started for {} '.format(assembly))
@@ -580,19 +581,15 @@ def main():
 		quast(assembly_dir,list_assemblies,multiqc_dir)
 		logger.info('----- GENOMES QC DONE ')
 		logger.info('----- COMPILING RESULTS WITH MULTIQC')
-		multiqc(multiqc_dir)	
-	else:
-		#Initialize all variable needed for antismash without starting the whole pipeline
-		assemblies = glob.glob(assembly_dir+'/*.f*a')
+		multiqc(multiqc_dir)
 	#------------------------Antismash---------------------------
 	#Starting here antismash
 	list_gbk = glob.glob(annotation_dir+'/*.gbk')
 	latest_gbk = max(list_gbk, key=os.path.getctime)
 	logger.info('--- Third part : BGC discovery ')
 	logger.info('----- ANTISMASH STARTED ')
-	for assembly in assemblies:
-		logger.debug('---------- Started for {} '.format(assembly))
-		antismash(latest_gbk,antismash_dir,tag,args)
+	logger.debug('---------- Started for {} '.format(assembly))
+	antismash(latest_gbk,antismash_dir,tag,args)
 	logger.info('----------------------Quasan has ended  (•̀ᴗ•́)و -------------------' )
 
 if __name__ == '__main__':
