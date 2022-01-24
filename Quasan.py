@@ -533,6 +533,8 @@ def main():
 		logger.info('--- Starting the pipeline ! ')
 		if not args.input_assembly:
 			logger.info('--- First part : Reads QC -> Assembly')
+			assembly_file = ""
+			assembly_version = ""
 			#--------------------------QC-------------------------------
 			logger.info('----- QC STARTS')
 			if ("illumina" in techno_available):
@@ -544,8 +546,6 @@ def main():
 				os.mkdir(assembly_dir)
 			ndate = datetime.datetime.now()
 			version = ndate.strftime("V%d.%m.%y")
-			assembly_file = ""
-			assembly_version = ""
 			if ("illumina" in techno_available) and ("pacbio" in techno_available):
 				logger.info('---------- Both Illumina reads and PacBio reads are available, starting flye assembly + pilon polishing.')
 				assembly_version = version + "_" + "hybrid_flye-pilon_" + tag
@@ -560,11 +560,18 @@ def main():
 				assembly_version = version + "_" + "pacbio_flye_" + tag
 				assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,assembly_version,args)
 			logger.info('----- ASSEMBLY DONE')
+		else:
+			#Find the latest assembly and its prefix
+			assemblies = glob.glob(assembly_dir+'/*.fna') + glob.glob(assembly_dir+'/*.fa') + glob.glob(assembly_dir+'/*.fasta')
+			latest_assembly = max(assemblies, key=os.path.getctime)
+			name = os.path.basename(latest_assembly)
+			tag, extension = os.path.splitext(name)
+			assembly_version = "custom_" + tag
+
 		#-----------------------Annotation---------------------------
 		logger.info('--- Second part : Annotation -> QC ')
 		logger.info('----- ANNOTATION START')
-		assemblies = glob.glob(assembly_dir+'/*.fna') + glob.glob(assembly_dir+'/*.fa') + glob.glob(assembly_dir+'/*.fasta')
-		latest_assembly = max(assemblies, key=os.path.getctime)
+		
 		logger.debug('---------- Using latest assembly for annotation : '.format(latest_assembly))
 		annotation_prokka(latest_assembly,annotation_dir+"/prokka",multiqc_dir,tag,assembly_version,args)
 		annotation_pgap(latest_assembly,annotation_dir+"/pgap",tag,assembly_version,args)
