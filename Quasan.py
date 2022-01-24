@@ -66,6 +66,7 @@ Options:
 ______________________________________________________________________
 ''')
 	parser.add_argument("-d", "--indir", help="The input directory where input reads are and output files will be generated according to the folder sturcture system.", required=True)
+	parser.add_argument("-ia", "--input_assembly", help="After placing your custom assembly in the assembly folder, this option allows you to directly go to the annotation and antismash step.", required=False, action='store_true')
 	parser.add_argument("-as", "--antismash", help="Start the pipeline only from the antismash step.", default=False, action='store_true')
 	parser.add_argument("-b", "--buscoLineage", help="The busco lineage to calculate genome completeness against (default : actinobacteria_phylum_odb10)", required=False, default="actinobacteria_phylum_odb10")
 	parser.add_argument("-r", "--ressources", help="The ressources folder where to download busco information (default : \"/vol/local/ressources\", when ran on ILis)", required=False, default="/vol/local/ressources")	
@@ -527,35 +528,38 @@ def main():
 	#Maybe one day I will find a nice PacBio QC tool but I doubt it, not a prioritu for now
 	#-----------------------Check mode--------------------------
 	if not args.antismash:
-		logger.info('--- Starting the pipeline from the begining ! ')
-		logger.info('--- First part : Reads QC -> Assembly -> Annotation -> QC ')
-		#-----------------------Assembly----------------------------
-		logger.info('----- QC STARTS')
-		if ("illumina" in techno_available):
-			qc_illumina(reads["illumina"],multiqc_dir,args)
-		logger.info('----- ASSEMBLY STARTS')
-		if not (os.path.isdir(assembly_dir)):
-			logger.info('---------- Creating folder {}.'.format(assembly_dir))
-			os.mkdir(assembly_dir)
-		ndate = datetime.datetime.now()
-		version = ndate.strftime("V%d.%m.%y")
-		assembly_file = ""
-		assembly_version = ""
-		if ("illumina" in techno_available) and ("pacbio" in techno_available):
-			logger.info('---------- Both Illumina reads and PacBio reads are available, starting flye assembly + pilon polishing.')
-			assembly_version = version + "_" + "hybrid_flye-pilon_" + tag
-			assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,assembly_version,args)
-			assembly_file = polishing(args.indir,assembly_file,reads["illumina"],tag)
-		elif ("illumina" in techno_available):
-			logger.info('---------- Only Illumina reads are available, starting assembly with shovill .')
-			assembly_version = version + "_" + "illumina_shovill_" + tag
-			assembly_file = assembly_illumina(reads["illumina"],assembly_dir,assembly_version,args)
-		elif ("pacbio" in techno_available):
-			logger.info('---------- Only PacBio reads are available, starting assembly with flye.')
-			assembly_version = version + "_" + "pacbio_flye_" + tag
-			assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,assembly_version,args)
-		logger.info('----- ASSEMBLY DONE')
+		logger.info('--- Starting the pipeline ! ')
+		if not args.input_assembly:
+			logger.info('--- First part : Reads QC -> Assembly')
+			#--------------------------QC-------------------------------
+			logger.info('----- QC STARTS')
+			if ("illumina" in techno_available):
+				qc_illumina(reads["illumina"],multiqc_dir,args)
+			#-----------------------Assembly----------------------------
+			logger.info('----- ASSEMBLY STARTS')
+			if not (os.path.isdir(assembly_dir)):
+				logger.info('---------- Creating folder {}.'.format(assembly_dir))
+				os.mkdir(assembly_dir)
+			ndate = datetime.datetime.now()
+			version = ndate.strftime("V%d.%m.%y")
+			assembly_file = ""
+			assembly_version = ""
+			if ("illumina" in techno_available) and ("pacbio" in techno_available):
+				logger.info('---------- Both Illumina reads and PacBio reads are available, starting flye assembly + pilon polishing.')
+				assembly_version = version + "_" + "hybrid_flye-pilon_" + tag
+				assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,assembly_version,args)
+				assembly_file = polishing(args.indir,assembly_file,reads["illumina"],tag)
+			elif ("illumina" in techno_available):
+				logger.info('---------- Only Illumina reads are available, starting assembly with shovill .')
+				assembly_version = version + "_" + "illumina_shovill_" + tag
+				assembly_file = assembly_illumina(reads["illumina"],assembly_dir,assembly_version,args)
+			elif ("pacbio" in techno_available):
+				logger.info('---------- Only PacBio reads are available, starting assembly with flye.')
+				assembly_version = version + "_" + "pacbio_flye_" + tag
+				assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,assembly_version,args)
+			logger.info('----- ASSEMBLY DONE')
 		#-----------------------Annotation---------------------------
+		logger.info('--- Second part : Annotation -> QC ')
 		logger.info('----- ANNOTATION START')
 		#/!\ Is it really a good thing to do annotation for all assemblies ? Or just the current assembly ?
 		#I don't remember the exact reasons I have done that in the past
@@ -584,8 +588,8 @@ def main():
 	#Starting here antismash
 	list_gbk = glob.glob(annotation_dir+'/*.gbk')
 	latest_gbk = max(list_gbk, key=os.path.getctime)
-	logger.info('--- Second part : Antismash ')
-	logger.info('----- BGC DISCOVERY STARTED ')
+	logger.info('--- Third part : BGC discovery ')
+	logger.info('----- ANTISMASH STARTED ')
 	for assembly in assemblies:
 		logger.debug('---------- Started for {} '.format(assembly))
 		antismash(latest_gbk,antismash_dir,tag,args)
