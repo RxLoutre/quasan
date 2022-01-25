@@ -13,10 +13,12 @@ Here will be some nice pictures soon
 ## Installation
 
 ```bash
+#Download using git clone from gitlab repo
+git clone https://gitlab.services.universiteitleiden.nl/ibl-bioinformatic/streptidy.git
 #If mamba already not in base environment
 conda install -n base -c bioconda mamba
 #Use the provided yaml file to create the environment easily
-conda env create -f quasan.yml
+mamba env create -f quasan.yml
 ```
 
 ## Usage

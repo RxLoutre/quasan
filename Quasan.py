@@ -83,6 +83,9 @@ ______________________________________________________________________
 	return (parser.parse_args())
  
 def return_reads(workdir):
+	# This function parse {workdir} and is looking for files that could be raw reads (.gz accepted), eg .fastq or .fq
+	# It return a list of the reads he found in this directory matching the name criteria
+	# If input reads from PacBio are in bam format, automatically perform the conversion to fastq.gz
 	files = os.listdir(workdir)
 	reads = []
 	for read_file in files:
@@ -116,6 +119,10 @@ def return_reads(workdir):
 	return reads
 
 def parse_reads(workdir):
+	# This function is a wrapper of return_reads and is used to store all kind of different raw data we could have
+	# It will only pay attention to directories in "rawdata" directory that has a subdirectory with a name of a known technology
+	# You can edit the global variable {sequencing_technologies} if more is needed
+	# It returns a dictionnary with sequencing technologies as keys and list of reads as values
 	reads_dir = os.listdir(workdir)
 	reads = {}
 	for technology in reads_dir:
@@ -127,6 +134,11 @@ def parse_reads(workdir):
 	return reads
 
 def find_R_reads(reads,strand):
+	# This function determine from a list of reads which sub-list of reads correspond to the given {strand}
+	# Strand can be either "1" or "2"
+	# Two patterns were commonly present in paired end technology and I created regexp for those I know
+	# /!\ This function might malfunction if the reads name do not correspond to this pattern
+	# Will return a list of reads that correspond to either of the known patterns and correspond to the given strand
 	R_reads = []
 	pattern1_R=".*_R?{}_.*\.f(ast)?q(.gz)?".format(strand)
 	pattern2_R=".*R?{}\.f(ast)?q(.gz)?".format(strand)
@@ -137,6 +149,9 @@ def find_R_reads(reads,strand):
 	return R_reads
 
 def concat_reads_illumina(workdir,reads):
+	# This function might be needed when more than one set of paired-end reads are in the same directory
+	# In this case, before assembly, a concatenated fie for each strand must be generated
+	# This function returns a double of the concatenated R1 file and concatenated R2 file
 	R1_reads = []
 	R2_reads = []
 	concat_R1_filename = workdir + "/concat_R1.fq.gz"
@@ -144,7 +159,7 @@ def concat_reads_illumina(workdir,reads):
 	#/!\ Check if something went wrong with find_R_reads
 	R1_reads = find_R_reads(reads,1)
 	R2_reads = find_R_reads(reads,2)		
-	#Concatenate all R1 together and all R2 together, in correct order hopefully
+	#Concatenate all R1 together and all R2 together, in correct order normally
 	try:
 		with open(concat_R1_filename,'wb') as wfp1:
 			for fn in R1_reads:
@@ -163,8 +178,12 @@ def concat_reads_illumina(workdir,reads):
 		sys.exit("Concat_reads failed to concatenate :(")
 	
 
-#/!\ Make a common part for both assemblies ?
 def assembly_illumina(reads,workdir,tag,args):
+	# Perform assembly with an "illumina only" approach using reads contained in the list {reads}
+	# This function write its output in the {workdir} directory
+	# It will rename the assembly generated using the prefix {tag} that is determined beforehand using the date and tool used
+	# Also clean up all temporary files and only keep fasta and gfa file
+	# If reads needed to be concatenated for the assembly, they will also be removed to save space
 	reads_files_nb = len(reads)
 	if (reads_files_nb > 2):
 		R1, R2 = concat_reads_illumina(workdir,reads)
@@ -178,10 +197,9 @@ def assembly_illumina(reads,workdir,tag,args):
 		final_assembly_graph = workdir + "/shovill/contigs.gfa"
 		#Renamed file for the final destination with only essentials files
 		shovill_assembly = workdir + "/" + tag + "_shovill.fa"
-		shovill_assembly_graph = workdir + "/" + tag + "_shovill.gfa"
-		
+		shovill_assembly_graph = workdir + "/" + tag + "_shovill.gfa"		
 		subprocess.check_output(cmd_assembly, shell=True)
-		logger.info('---------- Removing extra files and keeping only fasta files.')
+		logger.info('---------- Cleaning up extra files...')
 		os.replace(final_assembly,shovill_assembly)
 		os.replace(final_assembly_graph,shovill_assembly_graph)
 		#if there is a concat files, remove it !
@@ -197,6 +215,9 @@ def assembly_illumina(reads,workdir,tag,args):
 		raise
 
 def qc_illumina(reads,outdir,args):
+	# This function perform the initial raw reads {reads} QC using fastqc
+	# /!\ For now read QC is only performed on illumina data
+	# Write its output in {outdir}, whcih should be a location that multiqc is able to parse later
 	reads_files_nb = len(reads) // 2
 	R1_reads = []
 	R2_reads = []
@@ -218,8 +239,12 @@ def qc_illumina(reads,outdir,args):
 		raise
 
 def assembly_pacbio(reads,workdir,tag,args):
+	# Perform assembly with an "pacbio only" approach using reads contained in the list {reads}
+	# This function write its output in the {workdir} directory
+	# It will rename the assembly generated using the prefix {tag} that is determined beforehand using the date and tool used
+	# Also clean up all temporary files and only keep fasta and gfa file
 	try:
-		#Deal better if they are several fastq files for PacBio reads ?
+		# /!\ Deal better if they are several fastq files for PacBio reads ?
 		if isinstance(reads, list):
 			reads = reads[0]
 		flye_dir = workdir + "/flye"
@@ -253,6 +278,10 @@ def assembly_pacbio(reads,workdir,tag,args):
 		raise
 
 def polishing(workdir,assembly,reads,tag,args):
+	# Polish the given assembly {assembly} with reads in {reads}
+	# This function will perform all necessary steps : alignment, conversion to bam, sorting and polishing
+	# I have not tested this module recently
+	# /!\ Might need to remove some extra files such as the non sorted bam, the sam etc
 	reads_files_nb = len(reads)
 	if (reads_files_nb > 2):
 		R1, R2 = concat_reads_illumina(workdir,reads)
@@ -309,6 +338,11 @@ def polishing(workdir,assembly,reads,tag,args):
 		cmd_pilon = f"pilon --threads {args.threads} --genome {assembly} --frags {bam_sorted} --output {polished_assembly} --outdir {assembly_path}"
 		logger.info('---------- Starting Pilon with command : {}'.format(cmd_pilon))
 		subprocess.check_output(cmd_pilon, shell=True)
+		#if there is a concat files, remove it !
+		if(os.path.isfile(workdir + "/concat_R1.fq.gz")):
+			os.remove(workdir + "/concat_R1.fq.gz")
+		if(os.path.isfile(workdir + "/concat_R2.fq.gz")):
+			os.remove(workdir + "/concat_R2.fq.gz")
 	except Exception as e:
 		logger.error('---------- Pilon ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
@@ -317,6 +351,10 @@ def polishing(workdir,assembly,reads,tag,args):
 	return final
 
 def busco(assembly,workdir,outdir,args):
+	# Start BUSCO to measure gene content on the assembly {assembly}
+	# By default, using the lineage actinobacteria_phylum_odb10, but can be changed using the option --buscoLineage
+	# The lineage and the ressources to use are passed using args
+	# Write its output in the {outdir} directory, which is meant to be the multiqc dir
 	wdir_busco = workdir + "/busco"
 	busco_dl = args.ressources
 	name = os.path.basename(assembly)
@@ -341,7 +379,7 @@ def busco(assembly,workdir,outdir,args):
 
 def quast(workdir,fassemblies,outdir):
 	# Perform basic statistics (N50, number of contigs etc) on the given assembly file list {fassemblies}
-	# Write its output in the {outdir} directory
+	# Write its output in the {outdir} directory, which is meant to be the multiqc dir
 	wdir_quast = workdir + "/quast"
 	logger.info('---------- QUAST STARTED ')
 	try:
@@ -456,6 +494,10 @@ def annotation_pgap(assembly,workdir,tag,assembly_version,args):
 		raise
 
 def antismash(gbk,workdir,tag,args):
+	# This function perform Biosynthethic Gene Cluster discovery on a given gbk file {gbk}
+	# Use the prefix {tag} to rename the html file
+	# Write all its output in the {workdir} directory
+	# /!\ Maybe in the future think about compressing or reducing antismash output
 	cmd_antismash = f"antismash --genefinding-tool none --cpus {args.threads} --clusterhmmer --tigrfam --smcog-trees --cb-general --cb-subcluster --cb-knownclusters --asf --rre --cc-mibig --output-dir {workdir} --html-title {tag} {gbk}"
 	logger.info('---------- Starting antismash with command : {} .'.format(cmd_antismash))
 	try:
@@ -465,6 +507,9 @@ def antismash(gbk,workdir,tag,args):
 		logger.error(e, exc_info=True)
 		raise
 def multiqc(outdir):
+	# This function just call multiqc in the dir {outdir}
+	# All tools that can be parsed by multiqc should have wrote their report there so multiqc can make one big resume out of it
+	# /!\ Maybe in the future, rename the multiqc_report.html into something more friendly/attractive such as "click_me" or "general_report"
 	try:
 		cmd_multiqc = f"multiqc {outdir} -o {outdir} -f"
 		subprocess.check_output(cmd_multiqc, shell=True)
