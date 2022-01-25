@@ -593,7 +593,7 @@ def main():
 	latest_gbk = max(list_gbk, key=os.path.getctime)
 	logger.info('--- Third part : BGC discovery ')
 	logger.info('----- ANTISMASH STARTED ')
-	logger.debug('---------- Started for {} '.format(assembly))
+	logger.debug('---------- Started for {} '.format(latest_gbk))
 	antismash(latest_gbk,antismash_dir,tag,args)
 	logger.info('----------------------Quasan has ended  (•̀ᴗ•́)و -------------------' )
 
