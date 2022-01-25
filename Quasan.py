@@ -589,7 +589,7 @@ def main():
 		multiqc(multiqc_dir)
 	#------------------------Antismash---------------------------
 	#Starting here antismash
-	list_gbk = glob.glob(annotation_dir+'/*.gbk')
+	list_gbk = glob.glob(annotation_dir+'/pgap/*.gbk')
 	latest_gbk = max(list_gbk, key=os.path.getctime)
 	logger.info('--- Third part : BGC discovery ')
 	logger.info('----- ANTISMASH STARTED ')
