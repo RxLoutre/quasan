@@ -190,7 +190,7 @@ def assembly_illumina(reads,workdir,tag,args):
 		R1 = reads[0]
 		R2 = reads[1]
 	try:
-		cmd_assembly = f"shovill --cpus {args.threads} --outdir {workdir}/shovill --R1 {R1} --R2 {R2} --force --gsize {args.estimatedGenomeSize}"
+		cmd_assembly = f"shovill --cpus {args.threads} --outdir {workdir}/shovill --R1 {R1} --R2 {R2} --force --gsize {args.estimatedGenomeSize} --ram {args.memory}"
 		#Name of the final output we want to keep in their original folder
 		final_assembly = workdir + "/shovill/contigs.fa"
 		final_assembly_graph = workdir + "/shovill/contigs.gfa"
