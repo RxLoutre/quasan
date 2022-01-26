@@ -1,11 +1,15 @@
-# Streptidy
+# Quasan
 
-#### 🚧 Work in progress 🚧
-
-Streptidy is a pipeline meant to automatically run itself on the [ILis] (IBL Linux Server). It will watch over the directory containing a in house _streptomyces_  genomes collection, and.. keep it tidy of course 🥁.
-
-Streptidy will start from a directory filled with raw reads, and then make use of the python script **Quasan** (**Qu**ality **As**sembly **An**notation)
-
+	--------------------------------------------------  
+	________                                
+	\_____  \  __ _______    ___________    ____    
+	 /  / \  \|  |  \__  \  /  ___/\__  \  /    \   
+	/   \_/.  \  |  // __ \_\___ \  / __ \|   |  \   
+	\_____\ \_/____/(____  /____  >(____  /___|  /   
+	       \__>          \/     \/      \/     \/   
+	    (*Qu*ality - *As*sembly - *An*alysis )  
+	--------------------------------------------------		
+A pipeline for : Raw Reads QC -> Assembly -> Annotation -> Assembly QC -> BCG Discovery
 ## Overview
 
 Here will be some nice pictures soon

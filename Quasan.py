@@ -37,8 +37,7 @@ ______________________________________________________________________
 	       \__>          \/     \/      \/     \/ 
 	    (*Qu*ality - *As*sembly - *An*alysis )
 	--------------------------------------------------		
-A pipeline for assessing quality of raw Illumina reads.
-Performing : Raw Reads QC -> Assembly -> Annotation -> Assembly QC -> Antismash
+A pipeline for : Raw Reads QC -> Assembly -> Annotation -> Assembly QC -> BCG Discovery
 Requires to be ran into a proper conda environment containing all the dependencies.
 ______________________________________________________________________
 Generic command: python3 Quasan.py [Options]* -D [input_dir]
@@ -513,6 +512,8 @@ def multiqc(outdir):
 	try:
 		cmd_multiqc = f"multiqc {outdir} -o {outdir} -f"
 		subprocess.check_output(cmd_multiqc, shell=True)
+		logger.debug('---------- Renaming final report...')
+		os.replace(outdir+"/multiqc_report.html",outdir+"/../final_report.html")
 	except Exception as e:
 		logger.error('---------- MultiQC ended unexpectedly :( ')
 		logger.error(e, exc_info=True)
