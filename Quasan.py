@@ -70,7 +70,6 @@ ______________________________________________________________________
 	parser.add_argument("-b", "--buscoLineage", help="The busco lineage to calculate genome completeness against (default : actinobacteria_phylum_odb10)", required=False, default="actinobacteria_phylum_odb10")
 	parser.add_argument("-r", "--ressources", help="The ressources folder where to download busco information (default : \"/vol/local/ressources\", when ran on ILis)", required=False, default="/vol/local/ressources")	
 	parser.add_argument("-t", "--threads", help="The number of thread to use when using external tools (default : 8)",required=False, default=8)
-	parser.add_argument("-l", "--logfile", help="The file you want to write the log at (default : ./Quasan.log)", required=False, default="Quasan.log")
 	parser.add_argument("-m", "--memory", help="The maximum memory to use for all the steps (default : 16)", required=False, default=16)
 	parser.add_argument("-e", "--estimatedGenomeSize", help="The genome size you expect. Only used fopr reducing Shovil genome size estimation step. (default : 7,5M)", required=False, default="7.5m")
 	parser.add_argument("-g", "--gram", help="The gram type of the bacteria (pos/neg). Default = pos", required=False, default="pos")
@@ -544,7 +543,7 @@ def main():
 			logger.setLevel(logging.DEBUG)
 		else:
 			logger.setLevel(logging.INFO)
-		fh = logging.FileHandler(args.logfile)
+		fh = logging.FileHandler(args.indir+"/Quasan.log")
 		if (args.debug):
 			fh.setLevel(logging.DEBUG)
 		else:
@@ -553,10 +552,10 @@ def main():
 		fh.setFormatter(formatter)
 		logger.addHandler(fh)
 	except:
-		print("No permissions to write the logs at {}. Fine, no logs then :/".format(args.log))
+		print("No permissions to write the logs at {}. Fine, no logs then :/".format(args.indir+"/Quasan.log"))
 		pass # indicates that user has no write permission in this directory. No logs then
 	
-	logger.info('--------------------------------------------------')
+	logger.info('-------------------------------------------------')
 	logger.info('________')                                      
 	logger.info('\_____  \  __ _______    ___________    ____  ')
 	logger.info(' /  / \  \|  |  \__  \  /  ___/\__  \  /    \ ')
