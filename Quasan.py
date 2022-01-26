@@ -605,6 +605,7 @@ def main():
 				assembly_version = version + "_" + "pacbio_flye_" + tag
 				assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,assembly_version,args)
 			logger.info('----- ASSEMBLY DONE')
+			latest_assembly = assembly_file
 		else:
 			#Find the latest assembly and its prefix
 			assemblies = glob.glob(assembly_dir+'/*.fna') + glob.glob(assembly_dir+'/*.fa') + glob.glob(assembly_dir+'/*.fasta')
