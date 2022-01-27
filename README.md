@@ -52,3 +52,11 @@ graph TD
     C --> |MultiQC| R[final_report.html]
 ```
 </div>
+
+```mermaid
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+```
