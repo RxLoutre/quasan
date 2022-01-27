@@ -30,9 +30,10 @@ mamba env create -f quasan.yml
 ```python
 #Enlightenment soon to come
 ```
-<div class="right">
+## Pipeline description 
+
 ```mermaid
-graph TD
+graph TD;
     Z[1 MBTXX] --> |rawdata parsing| A[Reads]
     Y[2 MBTXX -ia] --> C
     A[Reads dictionnary] -->|illumina assembly shovill| B(MBTXX_shovill.fasta)
@@ -50,13 +51,4 @@ graph TD
     C --> |Busco| R[final_report.html]
     C --> |Quast| R[final_report.html]
     C --> |MultiQC| R[final_report.html]
-```
-</div>
-
-```mermaid
-graph TD;
-    A-->B;
-    A-->C;
-    B-->D;
-    C-->D;
 ```
