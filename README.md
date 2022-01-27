@@ -62,7 +62,7 @@ graph TD;
 
 ## Prerequisites
 
-[![](https://ibb.co/Y03KGxk)]
+<a href="https://ibb.co/Y03KGxk"><img src="https://i.ibb.co/mNGY73q/Screenshot-2022-01-26-at-10-49-59.png" alt="Screenshot-2022-01-26-at-10-49-59" border="0"></a><br /><a target='_blank' href='https://nl.imgbb.com/'>gratis afbeeldingen</a><br />
 
 
 ## Usage
