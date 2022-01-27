@@ -30,7 +30,7 @@ mamba env create -f quasan.yml
 ```python
 #Enlightenment soon to come
 ```
-
+<div class="right">
 ```mermaid
 graph TD
     Z[1 MBTXX] --> |rawdata parsing| A[Reads]
@@ -51,3 +51,4 @@ graph TD
     C --> |Quast| R[final_report.html]
     C --> |MultiQC| R[final_report.html]
 ```
+</div>
