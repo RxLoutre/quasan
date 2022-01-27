@@ -10,11 +10,17 @@
 	    (*Qu*ality - *As*sembly - *An*alysis )  
 	--------------------------------------------------		
 A pipeline for : Raw Reads QC -> Assembly -> Annotation -> Assembly QC -> BCG Discovery
-## Overview
+## For impatient people
 
-Here will be some nice pictures soon
+```bash
+#When logged on Ilis
+conda activate quasan
+python3 /vol/local/streptidy/Quasan.py -d "MBT42"
+```
 
 ## Installation
+
+
 
 ```bash
 #Download using git clone from gitlab repo
@@ -30,9 +36,11 @@ mamba env create -f quasan.yml
 ```python
 #Enlightenment soon to come
 ```
-## Pipeline description 
+## Pipeline overview 
 
-```mermaid
+```bash
+#Save of the mermaid code itself in case mermaid starts working again in gitlab
+#For now, you can see the rendering of this graph below
 graph TD;
     Z[1 MBTXX] --> |rawdata parsing| A[Reads]
     Y[2 MBTXX -ia] --> C
@@ -54,4 +62,6 @@ graph TD;
 ```
 
 [![](https://mermaid.ink/img/pako:eNqNU11PwjAU_Ss3fdIoJOobDyYMEBIlATUB3Qi5bIU1dO3SdpqF8t8t61Cm0bin9nzltqfbkVgmlHTIRmGewnM_EuC-1_AKxsHzfL6AVusWrML3BA1CjkozsbHQDR8pJnrh5S_htZdDi6G39DxT6yBhsWFSCFRlxVvGeZExgYBa02zFS9CpfHOoheCsylrWQHuN2uB5nefnuXPQtGfh8QS1OcYrJr8C17ykFoZ12mH3M8qm5UqxpGmCC8gZl8LC6MS8rLBGROCPuntAQ7X5DNl7dvgnO_qT7flzTpTcbt0dCSENHi7QQj_0I71RV4UUy7yStDer7aJpHXYnDePgm_EgOLENKtvsOM8wuK9HmYc3x3JR-3JnnplVm2nYFYbpDHXanCAodCxdR-Ha9cyXiuZSmXZqMt7UTQt3pf_QjQtuWNX6L0pySTKqMmSJe9C7AxIRk9KMRqTjlgmqbUQisXe6InfvmQ4SZqQinTVyTS8JFkY-lSImHaMKehT1GbqfI6tV-w-8Awov)](https://mermaid.live/edit#pako:eNqNU11PwjAU_Ss3fdIoJOobDyYMEBIlATUB3Qi5bIU1dO3SdpqF8t8t61Cm0bin9nzltqfbkVgmlHTIRmGewnM_EuC-1_AKxsHzfL6AVusWrML3BA1CjkozsbHQDR8pJnrh5S_htZdDi6G39DxT6yBhsWFSCFRlxVvGeZExgYBa02zFS9CpfHOoheCsylrWQHuN2uB5nefnuXPQtGfh8QS1OcYrJr8C17ykFoZ12mH3M8qm5UqxpGmCC8gZl8LC6MS8rLBGROCPuntAQ7X5DNl7dvgnO_qT7flzTpTcbt0dCSENHi7QQj_0I71RV4UUy7yStDer7aJpHXYnDePgm_EgOLENKtvsOM8wuK9HmYc3x3JR-3JnnplVm2nYFYbpDHXanCAodCxdR-Ha9cyXiuZSmXZqMt7UTQt3pf_QjQtuWNX6L0pySTKqMmSJe9C7AxIRk9KMRqTjlgmqbUQisXe6InfvmQ4SZqQinTVyTS8JFkY-lSImHaMKehT1GbqfI6tV-w-8Awov)
+
+
 

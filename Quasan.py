@@ -38,6 +38,7 @@ ______________________________________________________________________
 	    (*Qu*ality - *As*sembly - *An*alysis )
 	--------------------------------------------------		
 A pipeline for : Raw Reads QC -> Assembly -> Annotation -> Assembly QC -> BCG Discovery
+Meant to be run only on Ilis as many path are hard written, but could be adapted
 Requires to be ran into a proper conda environment containing all the dependencies.
 ______________________________________________________________________
 Generic command: python3 Quasan.py [Options]* -D [input_dir]
@@ -64,7 +65,8 @@ Options:
 
 ______________________________________________________________________
 ''')
-	parser.add_argument("-d", "--indir", help="The input directory where input reads are and output files will be generated according to the folder sturcture system.", required=True)
+	parser.add_argument("-s", "--strain", help="The strain you wich to work on.", required=True)
+	parser.add_argument("-d", "--indir", help="The input directory where input reads are and output files will be generated according to the folder sturcture system.", required=False, default="/vol/local/1-MBT-collection")
 	parser.add_argument("-ia", "--input_assembly", help="After placing your custom assembly in the assembly folder, this option allows you to directly go to the annotation and antismash step.", required=False, action='store_true')
 	parser.add_argument("-as", "--antismash", help="Start the pipeline only from the antismash step.", default=False, action='store_true')
 	parser.add_argument("-b", "--buscoLineage", help="The busco lineage to calculate genome completeness against (default : actinobacteria_phylum_odb10)", required=False, default="actinobacteria_phylum_odb10")
@@ -74,7 +76,7 @@ ______________________________________________________________________
 	parser.add_argument("-e", "--estimatedGenomeSize", help="The genome size you expect. Only used fopr reducing Shovil genome size estimation step. (default : 7,5M)", required=False, default="7.5m")
 	parser.add_argument("-g", "--gram", help="The gram type of the bacteria (pos/neg). Default = pos", required=False, default="pos")
 	parser.add_argument("--debug", "--debug", help="Debug mode to print more informations in the log.", required=False, action='store_true')
-	parser.add_argument("-s", "--genus", help="The genus of the bacteria. Default = Streptomyces", required=False, default="Streptomyces")
+	parser.add_argument("-ge", "--genus", help="The genus of the bacteria. Default = Streptomyces", required=False, default="Streptomyces")
 	parser.add_argument("--bioproject", "--bioproject", help="If annotation must be submitted to the NCBI, use this option to mention the correct bioproject (Default : PRJNA9999999).", default="PRJNA9999999")
 	parser.add_argument("--biosample", "--biosample", help="If annotation must be submitted to the NCBI, use this option to mention the correct biosample (Default : SAMN99999999).", default="SAMN99999999")
 	parser.add_argument("--locustag", "--locustag", help="If annotation must be submitted to the NCBI, use this option to mention the correct locus_tag (Default : TMLOC).", default="TMLOC")
@@ -524,17 +526,17 @@ def multiqc(outdir):
 def main():
 	#----------------------Args and global------------------------
 	args = get_arguments()
-	#If args.indir = /my/path/STRAIN_XX, then tag = STRAIN_XX
-	tag = os.path.basename(args.indir)
-	assembly_dir = args.indir + '/assembly'
-	annotation_dir = args.indir + '/annotation'
-	antismash_dir = args.indir + '/antismash'
-	multiqc_dir = args.indir + '/multiqc'
+	tag = args.strain
+	workdir = args.indir + '/' + args.strain
+	assembly_dir = workdir + '/assembly'
+	annotation_dir = workdir + '/annotation'
+	antismash_dir = workdir + '/antismash'
+	multiqc_dir = workdir + '/multiqc'
 	global sequencing_technologies
 	sequencing_technologies = ['illumina','pacbio','nanopore']
 	global pgap_dir
 	pgap_dir = "/vol/local/pgap"
-	reads_folder = args.indir + "/rawdata"
+	reads_folder = workdir + "/rawdata"
 	#-----------------------Init logging--------------------------
 	try:
 		global logger
@@ -565,6 +567,10 @@ def main():
 	logger.info('---------------------- {} ----------------------'.format(tag))
 	logger.info('Started with arguments :')
 	logger.info('{} '.format(args))
+	#--------------------Checking input folder------------------
+	if (not os.path.isdir(workdir)):
+		logger.error('---------- Wait a minute ! I dont see any strain {} in the collection folder {}, are you sure you did not made a mistake ? .'.format(tag,workdir))
+		sys.exit('---------- Wait a minute ! I dont see any strain {} in the collection folder {}, are you sure you did not made a mistake ? .'.format(tag,workdir))
 	if (not os.path.isdir(multiqc_dir)):
 		logger.info('---------- Creating folder {} .'.format(multiqc_dir))
 		os.mkdir(multiqc_dir)
