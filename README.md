@@ -62,7 +62,7 @@ graph TD;
 
 ## Prerequisites
 
-![image](https://ibb.co/Y03KGxk)
+[![](https://ibb.co/Y03KGxk)]
 
 
 ## Usage
