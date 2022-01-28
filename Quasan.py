@@ -622,8 +622,6 @@ def main():
 			#Find the latest assembly and its prefix
 			assemblies = glob.glob(assembly_dir+'/*.fna') + glob.glob(assembly_dir+'/*.fa') + glob.glob(assembly_dir+'/*.fasta')
 			latest_assembly = max(assemblies, key=os.path.getctime)
-			name = os.path.basename(latest_assembly)
-			tag, extension = os.path.splitext(name)
 			assembly_version = "custom_" + tag
 
 		#-----------------------Annotation---------------------------
