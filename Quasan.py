@@ -63,10 +63,11 @@ Options:
 	-e   The estimated genome size of your strain. (default : 7.5 Mbases)
 	-g   The gram type of the bacteria (pos/neg). (default : pos )
 	-ge  The genus of the bacteria. (default : Streptomyces)
+	--pgap       The annotation process must be ran using PGAP (/!\ It is buggy with genomes with too many contigs)
 	--bioproject If annotation must be submitted to the NCBI, use this option to mention the correct bioproject (default : PRJNA9999999)
 	--biosample  If annotation must be submitted to the NCBI, use this option to mention the correct biosample (default : SAMN99999999)
 	--locustag   If annotation must be submitted to the NCBI, use this option to mention the correct locus_tag (default : TMLOC).
-	--debug		 Debug mode to print more informations in the log.
+	--debug		 Debug mode to print more informations in the log
     
 
 ______________________________________________________________________
@@ -86,6 +87,7 @@ ______________________________________________________________________
 	parser.add_argument("--bioproject", "--bioproject", help="If annotation must be submitted to the NCBI, use this option to mention the correct bioproject (default : PRJNA9999999).", default="PRJNA9999999")
 	parser.add_argument("--biosample", "--biosample", help="If annotation must be submitted to the NCBI, use this option to mention the correct biosample (default : SAMN99999999).", default="SAMN99999999")
 	parser.add_argument("--locustag", "--locustag", help="If annotation must be submitted to the NCBI, use this option to mention the correct locus_tag (default : TMLOC).", default="TMLOC")
+	parser.add_argument("--pgap", "--pgap", help="If annotation must be submitted to the NCBI, use this option to run annotation step using PGAP instead of prokka.", action='store_true')
 	return (parser.parse_args())
  
 def return_reads(workdir):
@@ -629,8 +631,10 @@ def main():
 		logger.info('----- ANNOTATION START')
 		
 		logger.debug('---------- Using latest assembly for annotation : '.format(latest_assembly))
-		annotation_prokka(latest_assembly,annotation_dir+"/prokka",multiqc_dir,tag,assembly_version,args)
-		annotation_pgap(latest_assembly,annotation_dir+"/pgap",tag,assembly_version,args)
+		if not (args.pgap):
+			annotation_prokka(latest_assembly,annotation_dir+"/prokka",multiqc_dir,tag,assembly_version,args)
+		else:
+			annotation_pgap(latest_assembly,annotation_dir+"/pgap",tag,assembly_version,args)
 		#--------------------------MultiQc---------------------------
 		logger.info('----- GENOMES QC STARTED ')
 		list_assemblies = ""
