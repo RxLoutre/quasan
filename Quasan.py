@@ -620,6 +620,7 @@ def main():
 				assembly_file = assembly_pacbio(reads["pacbio"],assembly_dir,assembly_version,args)
 			logger.info('----- ASSEMBLY DONE')
 			latest_assembly = assembly_file
+			assemblies = glob.glob(assembly_dir+'/*.fna') + glob.glob(assembly_dir+'/*.fa') + glob.glob(assembly_dir+'/*.fasta')
 		else:
 			#Find the latest assembly and its prefix
 			assemblies = glob.glob(assembly_dir+'/*.fna') + glob.glob(assembly_dir+'/*.fa') + glob.glob(assembly_dir+'/*.fasta')
