@@ -562,7 +562,7 @@ def main():
 		fh.setFormatter(formatter)
 		logger.addHandler(fh)
 	except:
-		print("No permissions to write the logs at {}. Fine, no logs then :/".format(args.indir+"/Quasan.log"))
+		print("No permissions to write the logs at {}. Fine, no logs then :/".format(workdir+"/Quasan.log"))
 		pass # indicates that user has no write permission in this directory. No logs then
 	
 	logger.info('-------------------------------------------------')
