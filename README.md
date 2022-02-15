@@ -35,6 +35,10 @@ mamba env create -f quasan.yml
 
 ## Pipeline overview 
 
+Quasan is a pipeline that take as input raw reads from genomic DNA, from either Illumina or PacBio technologies. It expects a certain folder structure in order for it to work. In return, he will perform the following steps : Quality Check (Illumina only), Assembly, Annotation, BCG Discovery. Quasan will produce his output in a structued way, keeping only essentials files and removing intermediary data. For more information about the expected structure, see [Prerequisites](#Prerequisites).  
+
+<details>
+    <summary>Saved mermaid code</summary>
 ```bash
 #Save of the mermaid code itself in case mermaid starts working again in gitlab
 #For now, you can see the rendering of this graph below
@@ -50,6 +54,7 @@ graph TD;
     H --> C{Latest assembly}
     C --> |Prokka annotation| D[MBTXX_version_prokka.gbk]
     C --> |PGAP annotation| E[MBTXX_version_PGAP.gbk]
+    D --> W{Latest GBK}
     E --> W{Latest GBK}
     X[3 MBTXX -as] --> W
     W --> Q[Antismash]
@@ -57,8 +62,10 @@ graph TD;
     C --> |Quast| R[final_report.html]
     C --> |MultiQC| R[final_report.html]
 ```
+</details>
 
-[![](https://mermaid.ink/img/pako:eNqNU11PwjAU_Ss3fdIoJOobDyYMEBIlATUB3Qi5bIU1dO3SdpqF8t8t61Cm0bin9nzltqfbkVgmlHTIRmGewnM_EuC-1_AKxsHzfL6AVusWrML3BA1CjkozsbHQDR8pJnrh5S_htZdDi6G39DxT6yBhsWFSCFRlxVvGeZExgYBa02zFS9CpfHOoheCsylrWQHuN2uB5nefnuXPQtGfh8QS1OcYrJr8C17ykFoZ12mH3M8qm5UqxpGmCC8gZl8LC6MS8rLBGROCPuntAQ7X5DNl7dvgnO_qT7flzTpTcbt0dCSENHi7QQj_0I71RV4UUy7yStDer7aJpHXYnDePgm_EgOLENKtvsOM8wuK9HmYc3x3JR-3JnnplVm2nYFYbpDHXanCAodCxdR-Ha9cyXiuZSmXZqMt7UTQt3pf_QjQtuWNX6L0pySTKqMmSJe9C7AxIRk9KMRqTjlgmqbUQisXe6InfvmQ4SZqQinTVyTS8JFkY-lSImHaMKehT1GbqfI6tV-w-8Awov)](https://mermaid.live/edit#pako:eNqNU11PwjAU_Ss3fdIoJOobDyYMEBIlATUB3Qi5bIU1dO3SdpqF8t8t61Cm0bin9nzltqfbkVgmlHTIRmGewnM_EuC-1_AKxsHzfL6AVusWrML3BA1CjkozsbHQDR8pJnrh5S_htZdDi6G39DxT6yBhsWFSCFRlxVvGeZExgYBa02zFS9CpfHOoheCsylrWQHuN2uB5nefnuXPQtGfh8QS1OcYrJr8C17ykFoZ12mH3M8qm5UqxpGmCC8gZl8LC6MS8rLBGROCPuntAQ7X5DNl7dvgnO_qT7flzTpTcbt0dCSENHi7QQj_0I71RV4UUy7yStDer7aJpHXYnDePgm_EgOLENKtvsOM8wuK9HmYc3x3JR-3JnnplVm2nYFYbpDHXanCAodCxdR-Ha9cyXiuZSmXZqMt7UTQt3pf_QjQtuWNX6L0pySTKqMmSJe9C7AxIRk9KMRqTjlgmqbUQisXe6InfvmQ4SZqQinTVyTS8JFkY-lSImHaMKehT1GbqfI6tV-w-8Awov)
+[![](https://mermaid.ink/img/pako:eNqNU21PwjAQ_iuXftIoJOo3TEwYICZqImgCuhFybIU1bO3SdpiF8t_t1qHMF-I-tc9brne3LQlFREmHrCRmMbz0rwMO9nvzL-DRe5lOZ9Bq3YCR-B6hRshQKsZXBrr-mGKkZk7-6l86ObQYOkvPMbUOIhZqJjhHWVS8YUmSp4wjoFI0XSQFqFhsLGrAO6my5jXQXqLSeFrnuXpuLTTqGRgfoCbDcMHEV-AyKaiBYZ1W3n5GmbhYSBY1TXAGGUsEN3B3YJ5XWCPCc0_dPqCmSn-G7Bw7PMreHWV77p1PUqzXtkecC41lAw30fVfShtpRCD7PKkl7tVjPmtZh96lhHHwzloIDW7-yTfb1DL37upTBX8TUv9pPHZWb-sQxk-oy8rtcM5WiipulebkKhR2ev7QLkMwlzYTU7VinSVM3ym2v_6F7zBPNqnX4RUnOSUpliiyya74tfQHRMU1pQDr2GKFcByTgO6vLM7vkdBAxLSTpaJnTc4K5Fs8FD_d3p-kztH9M6sDdB2qhD-A)](https://mermaid.live/edit/#pako:eNqNU21PwjAQ_iuXftIoJOo3TEwYICZqImgCuhFybIU1bO3SdpiF8t_t1qHMF-I-tc9brne3LQlFREmHrCRmMbz0rwMO9nvzL-DRe5lOZ9Bq3YCR-B6hRshQKsZXBrr-mGKkZk7-6l86ObQYOkvPMbUOIhZqJjhHWVS8YUmSp4wjoFI0XSQFqFhsLGrAO6my5jXQXqLSeFrnuXpuLTTqGRgfoCbDcMHEV-AyKaiBYZ1W3n5GmbhYSBY1TXAGGUsEN3B3YJ5XWCPCc0_dPqCmSn-G7Bw7PMreHWV77p1PUqzXtkecC41lAw30fVfShtpRCD7PKkl7tVjPmtZh96lhHHwzloIDW7-yTfb1DL37upTBX8TUv9pPHZWb-sQxk-oy8rtcM5WiipulebkKhR2ev7QLkMwlzYTU7VinSVM3ym2v_6F7zBPNqnX4RUnOSUpliiyya74tfQHRMU1pQDr2GKFcByTgO6vLM7vkdBAxLSTpaJnTc4K5Fs8FD_d3p-kztH9M6sDdB2qhD-A)
+
 
 ## Prerequisites
 
