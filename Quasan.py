@@ -44,7 +44,7 @@ ______________________________________________________________________
 Generic command: python3 Quasan.py [Options]* -s [MBTXX]
 
 Mandatory arguments:
-    -ds  Specify the strain.
+    -s  Specify the strain.
 	The directory is expected to have a least this minimal structure :
          MBTXX
          └──rawdata
