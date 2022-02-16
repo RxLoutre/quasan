@@ -553,7 +553,7 @@ def main():
 			logger.setLevel(logging.DEBUG)
 		else:
 			logger.setLevel(logging.INFO)
-		fh = logging.FileHandler(args.indir+"/Quasan.log")
+		fh = logging.FileHandler(workdir+"/Quasan.log")
 		if (args.debug):
 			fh.setLevel(logging.DEBUG)
 		else:
