@@ -10,13 +10,13 @@
 					--------------------------------------------------		
 <p align=center>A pipeline designed for analyzing and keeping tidy a collection of Streptomyces genomes.</p>
 
-## For impatient people
+## Quick start
 
 ```bash
 #When logged on Ilis, activate quasan environement and go to the right location
 conda activate quasan
 cd /vol/local
-#Example 1 : The classic ; Complete analysis of MBT42 (new collection)
+#Example 1 : The classic ; Complete analysis (Raw reads - QC - Assembly - Annotation - BCG Discovery) of MBT42 (new collection)
 python3 streptidy/Quasan.py -s "MBT42"
 #Example 2 : Complete analysis of p62 (old collection) with 20 threads
 python3 streptidy/Quasan.py -s "p62" -t 20 -d "/vol/local/2-MBT-old-collection"
@@ -33,29 +33,29 @@ python3 streptidy/Quasan.py -s "MBT42" -as --pgap
 python3 streptidy/Quasan.py -s "SPIRO666" --pgap -b "spirochaetes_odb10" -ia -t 32 -g "neg" -m 32 -e "10.5m" -ge "Spirochaetes"
 ```
 
-You read a few examples but still have some questions ? The you should definitely read some more of this README :duck: .  
+You read a few examples but still have some questions ? Then you should definitely read some more of this README :duck: .  
 
 ## Options and default parameters
 
 ```bash
 Mandatory arguments:
-    -s  Specify the strain.
+    -s  Specify the strain you want to analyze, or the folder name where the data is stored
         
 Options:
-    -as  Start the pipeline only from the BCG Discovery step using the latest .gbk file in MBTXX/annotation/pgap directory
-	-ia  Start the pipeline only from the Annotation step, using the latest assembly file found in MBTXX/assembly directory
-	-b   The busco lineage to calculate genome completeness against (default : streptomycetales_odb10)
-	-r   The ressources folder where to download busco information (default : "/vol/local/ressources", when ran on ILis)
-	-t   The number of threads to give to external tools (default : 8)
-	-m   The maximum amount of memory to be allocated (default : 16Gb)
-	-e   The estimated genome size of your strain. (default : 7.5 Mbases)
-	-g   The gram type of the bacteria (pos/neg). (default : pos )
-	-ge  The genus of the bacteria. (default : Streptomyces)
-	--pgap       The annotation process must be ran using PGAP (/!\ It does not work well with genomes with too many contigs)
-	--bioproject If annotation must be submitted to the NCBI, use this option to mention the correct bioproject (default : PRJNA9999999)
-	--biosample  If annotation must be submitted to the NCBI, use this option to mention the correct biosample (default : SAMN99999999)
-	--locustag   If annotation must be submitted to the NCBI, use this option to mention the correct locus_tag (default : TMLOC).
-	--debug		 Debug mode to print more informations in the log
+-as  Start the pipeline only from the BCG Discovery step using the latest .gbk file in prokka subfolder (or pgap subfolder if you use the --pgap option)
+-ia  Start the pipeline only from the Annotation step, using the latest assembly file found in MBTXX/assembly directory
+-b   The busco lineage to calculate genome completeness against (default : streptomycetales_odb10)
+-r   The ressources folder where to download busco information (default : "/vol/local/ressources", when ran on ILis)
+-t   The number of threads to give to external tools (default : 8)
+-m   The maximum amount of memory to be allocated (default : 16Gb)
+-e   The estimated genome size of your strain. (default : 7.5 Mbases)
+-g   The gram type of the bacteria (pos/neg). (default : pos )
+-ge  The genus of the bacteria. (default : Streptomyces)
+--pgap       The annotation process must be ran using PGAP (/!\ It does not work with genomes with too many contigs)
+--bioproject If annotation must be submitted to the NCBI, use this option to mention the correct bioproject (default : PRJNA9999999)
+--biosample  If annotation must be submitted to the NCBI, use this option to mention the correct biosample (default : SAMN99999999)
+--locustag   If annotation must be submitted to the NCBI, use this option to mention the correct locus_tag (default : TMLOC).
+--debug		 Debug mode to print more informations in the log
 ```
 
 
@@ -76,6 +76,8 @@ conda install -n base -c bioconda mamba
 mamba env create -f quasan.yml
 ```
 
+An option allows Quasan to use PGAP as an annotation tool. PGAP was installed on Ilis by @Du and you can obtain more informations about the process here :  [PGAP HowTo by Du](https://gitlab.services.universiteitleiden.nl/duc/howtos/-/blob/master/Annotate%20genome%20for%20NCBI%20with%20PGAP.md "Thanks Du !").
+
 ## Pipeline overview 
 
 Quasan is a pipeline that take as input raw reads from genomic DNA, from either Illumina or PacBio technologies. It expects a certain folder structure in order for it to work. In return, he will perform the following steps : Quality Check (Illumina only), Assembly, Assembly QC, Annotation, BCG Discovery. Quasan will produce his output in a structured way, keeping only essentials files and removing intermediary data. For more information about the expected structure, see chapter about Prerequisites.  
@@ -85,8 +87,7 @@ Quasan can be called in 3 differents ways :
 1. Like example 1 and 2, you start from the begining and perform the assembly and all the following steps.
 2. Like example 3, 4 and 6, (-ia option, Input Assembly) you only start from the annotation step. This allow you to squeeze in a custom assembly you have made on the side with custom tools and parameters.
 3. Like example 5, you only start from the BCG discovery step. This allow you to pass on a custom .gbk file you might have produced with a tool of your choice. 
-
-For mode 2 and 3, quasan will look after the most recent file in their respective directory (**most recent .fasta** in assembly folder for -ia mode, **most recent .gbk file** in annotation folder for -as mode. If you use --pgap, then place your gbk in **annotation/pgap** folder. Otherwise place it in **annotation/prokka** folder).  
+ 
 
 <details>
     <summary>Saved mermaid code</summary>
@@ -128,6 +129,75 @@ Quasan can only work when given a -s STRAIN that can be found on Ilis in the fol
 
 - If you want to run with the -ia option and start only from annotation, and therefore use Quasan with a custom assembly you have made, then you only need the **assembly** directory. *:warning: However, to keep things clean and tidy, I recommend you still build the rawdata directory and populate it with your rawdata.* Place your custom assembly in the fasta format in the **assembly** directory and Quasan will be able to use it for annotation and BCG discovery. If you don't have a custom assembly, then Quasan will just use the most recent fasta file in the assembly folder.  
 
-- If you want to run with the -as option and start from the BCG discovery, and therefore use Quasan with a custom annotation you have made, then you only need the **assembly** directory. *:warning: However, to keep things clean and tidy, I recommend you still build the rawdata directory and the assembly directory and populate them with correct files.* Place your custom annotation in at least .gbk format in a subfolder **prokka** , even if it was not prokka that generated it, and Quasan will be able to use it to call Antismash for you. *Sorry my code is not perfect !* If you don't have a custom annotation and just want to restart the antismash process, then Quasan will just use the most recent .gbk in the **prokka** subfolder for annotation made by prokka, or the **pgap** subfolder for annotation made with pgap (call Quasan with the --pgap option as well, like in Example 5 above.)  
+- If you want to run with the -as option and start from the BCG discovery, and therefore use Quasan with a custom annotation you have made, then you only need the **assembly** directory. *:warning: However, to keep things clean and tidy, I recommend you still build the rawdata directory and the assembly directory and populate them with correct files.* Place your custom annotation in at least .gbk format in any subfolder (can be named prokka, pgap or custom for example). If you don't have a custom annotation and just want to restart the antismash process, then Quasan will just use the most recently created .gbk in the **annotation** subfolders.  
 
-After it ran, Quasan will create the folder structure on the right of the picture. Nice and tidy ! Everything is at its right place, in a codified way that is the same for all strains :sparkles: . You will find one folder per type of files, and all intermediary files generated during the analysis were removed to keep only essentials files. 
+<u> :warning: I insist many times on **the most recent** file. This means recent in the eye of creation date. If you want to use a custom assembly that was made after an other assembly, then you should use the command touch to update the file's date and make it recognizable for Quasan. </u>
+
+After it ran, Quasan will create the folder structure on the right of the picture. Nice and tidy ! Everything is at its right place, in a codified way that is the same for all strains :sparkles: . You will find one folder per type of files, and all intermediary files generated during the analysis were removed to keep only essentials files.  
+
+
+## Pipeline details
+
+### Quasan.log
+
+For each run, Quasan will write everything he has seen and done into its log Quasan.log. The log is created at the root of the STRAIN folder. Here is an example of Quasan's log :
+
+```bash
+#Quasan's log on PG2
+2022-02-16 11:09:12 - INFO - -------------------------------------------------
+2022-02-16 11:09:12 - INFO - ________
+2022-02-16 11:09:12 - INFO - \_____  \  __ _______    ___________    ____  
+2022-02-16 11:09:12 - INFO -  /  / \  \|  |  \__  \  /  ___/\__  \  /    \ 
+2022-02-16 11:09:12 - INFO - /   \_/.  \  |  // __ \_\___ \  / __ \|   |  \ 
+2022-02-16 11:09:12 - INFO - \_____\ \_/____/(____  /____  >(____  /___|  / 
+2022-02-16 11:09:12 - INFO -        \__>          \/     \/      \/     \/ 
+2022-02-16 11:09:12 - INFO - ---------------------- PG2 ----------------------
+2022-02-16 11:09:12 - INFO - Started with arguments :
+2022-02-16 11:09:12 - INFO - Namespace(antismash=False, bioproject='PRJNA9999999', biosample='SAMN99999999', buscoLineage='actinobacteria_phylum_odb10', debug=False, estimatedGenomeSize='7.5m', genus='Streptomyces', gram='pos', indir='/vol/local/1-MBT-collection', input_assembly=False, locustag='TMLOC', memory=16, pgap=False, ressources='/vol/local/ressources', strain='PG2', threads='10') 
+2022-02-16 11:09:12 - INFO - ---------- Creating folder /vol/local/1-MBT-collection/PG2/multiqc .
+2022-02-16 11:09:12 - INFO - ----- PARSING READS
+2022-02-16 11:09:12 - INFO - ---------- Detected a folder for pacbio technology
+2022-02-16 11:09:12 - INFO - ---------- Added fastq file PG2.fastq.gz from directory /vol/local/1-MBT-collection/PG2/rawdata/pacbio 
+2022-02-16 11:09:12 - INFO - ---------- Found a bam file PG2.bam , probably from PacBio. Checking if fastq already exist.
+2022-02-16 11:09:12 - INFO - ---------- Corresponding fastq /vol/local/1-MBT-collection/PG2/rawdata/pacbio/PG2.fastq.gz already existing, skipping conversion.
+2022-02-16 11:09:12 - INFO - --- Starting the pipeline ! 
+2022-02-16 11:09:12 - INFO - --- First part : Reads QC -> Assembly
+2022-02-16 11:09:12 - INFO - ----- QC STARTS
+2022-02-16 11:09:12 - INFO - ----- ASSEMBLY STARTS
+2022-02-16 11:09:12 - INFO - ---------- Creating folder /vol/local/1-MBT-collection/PG2/assembly.
+2022-02-16 11:09:12 - INFO - ---------- Only PacBio reads are available, starting assembly with flye.
+2022-02-16 11:09:12 - INFO - ---------- Expected file "/vol/local/1-MBT-collection/PG2/assembly/V16.02.22_pacbio_flye_PG2.fasta" is not present, starting assembly process.
+2022-02-16 11:09:12 - INFO - ---------- Creating folder /vol/local/1-MBT-collection/PG2/assembly/flye.
+2022-02-16 11:09:12 - INFO - ---------- Starting now Flye with command : flye --pacbio-raw /vol/local/1-MBT-collection/PG2/rawdata/pacbio/PG2.fastq.gz --out-dir /vol/local/1-MBT-collection/PG2/assembly/flye --threads 10 --genome-size 7.5m --asm-coverage 50 
+2022-02-16 11:24:23 - INFO - ---------- Cleaning up extra files...
+2022-02-16 11:24:23 - INFO - ---------- Produced assembly {flye_assembly}, yaaay !
+2022-02-16 11:24:23 - INFO - ----- ASSEMBLY DONE
+2022-02-16 11:24:23 - INFO - --- Second part : Annotation -> QC 
+2022-02-16 11:24:23 - INFO - ----- ANNOTATION START
+2022-02-16 11:24:23 - INFO - ---------- Creating folder /vol/local/1-MBT-collection/PG2/annotation/prokka .
+2022-02-16 11:24:23 - INFO - ---------- Starting prokka with command : prokka --centre MBT --genus Streptomyces --species sp. --strain PG2 --outdir /vol/local/1-MBT-collection/PG2/annotation/prokka --prefix V16.02.22_pacbio_flye_PG2_prokka --gcode 11 --cpu 10 --locustag TMLOC --addgenes --gram pos --rfam --force /vol/local/1-MBT-collection/PG2/assembly/V16.02.22_pacbio_flye_PG2.fasta .
+2022-02-16 11:31:00 - INFO - ---------- Moving report file to multiqc directory...
+2022-02-16 11:31:00 - INFO - ----- GENOMES QC STARTED 
+2022-02-16 11:31:00 - INFO - ---------- BUSCO STARTED 
+2022-02-16 11:31:25 - INFO - ---------- BUSCO DONE 
+2022-02-16 11:31:25 - INFO - ---------- Gathering essential results files
+2022-02-16 11:31:25 - INFO - ---------- Removing extra files.
+2022-02-16 11:31:25 - INFO - ---------- QUAST STARTED 
+2022-02-16 11:31:27 - INFO - ---------- QUAST DONE 
+2022-02-16 11:31:27 - INFO - ---------- Gathering essential results files
+2022-02-16 11:31:27 - INFO - ---------- Removing extra files.
+2022-02-16 11:31:27 - INFO - ----- GENOMES QC DONE 
+2022-02-16 11:31:27 - INFO - ----- COMPILING RESULTS WITH MULTIQC
+2022-02-16 11:31:29 - INFO - --- Third part : BGC discovery 
+2022-02-16 11:31:29 - INFO - ----- ANTISMASH STARTED 
+2022-02-16 11:31:29 - INFO - ---------- Starting antismash with command : antismash --genefinding-tool none --cpus 10 --clusterhmmer --tigrfam --smcog-trees --cb-general --cb-subcluster --cb-knownclusters --asf --rre --cc-mibig --output-dir /vol/local/1-MBT-collection/PG2/antismash --html-title PG2 /vol/local/1-MBT-collection/PG2/annotation/prokka/V16.02.22_pacbio_flye_PG2_prokka.gbk .
+2022-02-16 11:45:29 - INFO - ----------------------Quasan has ended  (•̀ᴗ•́)و -------------------
+```
+
+### Quality Control rawdata
+
+
+### Assembly
+
+
+### Annotation
