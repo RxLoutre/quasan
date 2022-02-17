@@ -26,8 +26,8 @@ python3 streptidy/Quasan.py -s "MBT27" -ia
 #Example 4 : Starting the analysis from the anotation step using pgap instead of prokka
 python3 streptidy/Quasan.py -s "MBT27" -ia --pgap
 #Example 5 : Starting the analysis only from BCG discovery step
-#(if new antismash version is avalable for example, most recent .gbk in the annotation folder will be used)
-python3 streptidy/Quasan.py -s "MBT42" -as
+#(if new antismash version is avalable for example, most recent .gbk in the pgap annotation folder will be used)
+python3 streptidy/Quasan.py -s "MBT42" -as --pgap
 #Example 6 : Trickster god mode ; Using all possible options and hoping for the best
 #(Work best if you are tired of studying Streptomyces and if you want to watch the world burn in blue flammes)
 python3 streptidy/Quasan.py -s "SPIRO666" --pgap -b "spirochaetes_odb10" -ia -t 32 -g "neg" -m 32 -e "10.5m" -ge "Spirochaetes"
@@ -51,7 +51,7 @@ Options:
 	-e   The estimated genome size of your strain. (default : 7.5 Mbases)
 	-g   The gram type of the bacteria (pos/neg). (default : pos )
 	-ge  The genus of the bacteria. (default : Streptomyces)
-	--pgap       The annotation process must be ran using PGAP (/!\ It is buggy with genomes with too many contigs)
+	--pgap       The annotation process must be ran using PGAP (/!\ It does not work well with genomes with too many contigs)
 	--bioproject If annotation must be submitted to the NCBI, use this option to mention the correct bioproject (default : PRJNA9999999)
 	--biosample  If annotation must be submitted to the NCBI, use this option to mention the correct biosample (default : SAMN99999999)
 	--locustag   If annotation must be submitted to the NCBI, use this option to mention the correct locus_tag (default : TMLOC).
@@ -115,26 +115,17 @@ graph TD;
 ```
 </details>
 
-[![](https://mermaid.ink/img/pako:eNqNU21PwjAQ_iuXftIoJOo3TEwYICZqImgCuhFybIU1bO3SdpiF8t_t1qHMF-I-tc9brne3LQlFREmHrCRmMbz0rwMO9nvzL-DRe5lOZ9Bq3YCR-B6hRshQKsZXBrr-mGKkZk7-6l86ObQYOkvPMbUOIhZqJjhHWVS8YUmSp4wjoFI0XSQFqFhsLGrAO6my5jXQXqLSeFrnuXpuLTTqGRgfoCbDcMHEV-AyKaiBYZ1W3n5GmbhYSBY1TXAGGUsEN3B3YJ5XWCPCc0_dPqCmSn-G7Bw7PMreHWV77p1PUqzXtkecC41lAw30fVfShtpRCD7PKkl7tVjPmtZh96lhHHwzloIDW7-yTfb1DL37upTBX8TUv9pPHZWb-sQxk-oy8rtcM5WiipulebkKhR2ev7QLkMwlzYTU7VinSVM3ym2v_6F7zBPNqnX4RUnOSUpliiyya74tfQHRMU1pQDr2GKFcByTgO6vLM7vkdBAxLSTpaJnTc4K5Fs8FD_d3p-kztH9M6sDdB2qhD-A)](https://mermaid.live/edit/#pako:eNqNU21PwjAQ_iuXftIoJOo3TEwYICZqImgCuhFybIU1bO3SdpiF8t_t1qHMF-I-tc9brne3LQlFREmHrCRmMbz0rwMO9nvzL-DRe5lOZ9Bq3YCR-B6hRshQKsZXBrr-mGKkZk7-6l86ObQYOkvPMbUOIhZqJjhHWVS8YUmSp4wjoFI0XSQFqFhsLGrAO6my5jXQXqLSeFrnuXpuLTTqGRgfoCbDcMHEV-AyKaiBYZ1W3n5GmbhYSBY1TXAGGUsEN3B3YJ5XWCPCc0_dPqCmSn-G7Bw7PMreHWV77p1PUqzXtkecC41lAw30fVfShtpRCD7PKkl7tVjPmtZh96lhHHwzloIDW7-yTfb1DL37upTBX8TUv9pPHZWb-sQxk-oy8rtcM5WiipulebkKhR2ev7QLkMwlzYTU7VinSVM3ym2v_6F7zBPNqnX4RUnOSUpliiyya74tfQHRMU1pQDr2GKFcByTgO6vLM7vkdBAxLSTpaJnTc4K5Fs8FD_d3p-kztH9M6sDdB2qhD-A)
+[![](https://mermaid.ink/img/pako:eNqNU21PwjAQ_iuXftIoJOo3TEwYICZqImgCuhFybIU1bO3SdpiF8t_t1qHMF-I-tc9brne3LQlFREmHrCRmMbz0rwMO9nvzL-DRe5lOZ9Bq3YCR-B6hRshQKsZXBrr-mGKkZk7-6l86ObQYOkvPMbUOIhZqJjhHWVS8YUmSp4wjoFI0XSQFqFhsLGrAO6my5jXQXqLSeFrnuXpuLTTqGRgfoCbDcMHEV-AyKaiBYZ1W3n5GmbhYSBY1TXAGGUsEN3B3YJ5XWCPCc0_dPqCmSn-G7Bw7PMreHWV77p1PUqzXtkecC41lAw30fVfShtpRCD7PKkl7tVjPmtZh96lhHHwzloIDW7-yTfb1DL37upTBX8TUv9pPHZWb-sQxk-oy8rtcM5WiipulebkKhR2ev7QLkMwlzYTU7VinSVM3ym2v_6F7zBPNqnX4RUnOSUpliiyya74tfQHRMU1pQDr2GKFcByTgO6vLM7vkdBAxLSTpaJnTc4K5Fs8FD_d3p-kztH9M6sDdB2qhD-A)](https://mermaid.live/edit#pako:eNqNU21PwjAQ_iuXftIoJOo3TEwYICZqImgCuhFybIU1bO3SdpiF8t_t1qHMF-I-tc9brne3LQlFREmHrCRmMbz0rwMO9nvzL-DRe5lOZ9Bq3YCR-B6hRshQKsZXBrr-mGKkZk7-6l86ObQYOkvPMbUOIhZqJjhHWVS8YUmSp4wjoFI0XSQFqFhsLGrAO6my5jXQXqLSeFrnuXpuLTTqGRgfoCbDcMHEV-AyKaiBYZ1W3n5GmbhYSBY1TXAGGUsEN3B3YJ5XWCPCc0_dPqCmSn-G7Bw7PMreHWV77p1PUqzXtkecC41lAw30fVfShtpRCD7PKkl7tVjPmtZh96lhHHwzloIDW7-yTfb1DL37upTBX8TUv9pPHZWb-sQxk-oy8rtcM5WiipulebkKhR2ev7QLkMwlzYTU7VinSVM3ym2v_6F7zBPNqnX4RUnOSUpliiyya74tfQHRMU1pQDr2GKFcByTgO6vLM7vkdBAxLSTpaJnTc4K5Fs8FD_d3p-kztH9M6sDdB2qhD-A)
 
 
 ## Prerequisites
 
 <a href="https://ibb.co/Y03KGxk"><img src="https://i.ibb.co/mNGY73q/Screenshot-2022-01-26-at-10-49-59.png" alt="Screenshot-2022-01-26-at-10-49-59" border="0"></a><br /><a target='_blank' href='https://nl.imgbb.com/'></a><br />
 
+Quasan can only work when given a -s STRAIN that can be found on Ilis in the folder /vol/local/1-MBT-collection . You can change this default directory using the -d option.  
 
+When starting the pipeline from the beginiing, you need only inside the directory STRAIN the **rawdata** directory. You must then create subfolders for the sequencing technology that was used to produce the data. For now, supported are only PacBio and Illumina. Not sure to understand what I am saying ? Just mimic the folder structure of MBT42 on the left of the picture.  
 
+If you want to run with the -ia option and start only from annotation, and therefore use Quasan with a custom assembly you have made, then you only need the **assembly** directory. *:warning: However, to keep things clean and tidy, I recommend you still build the rawdata directory and populate it with your rawdata.* Place your custom assembly in the fasta format in the **assembly** directory and Quasan will be able to use it for annotation and BCG discovery. If you don't have a custom assembly, then Quasan will just use the most recent fasta file in the assembly folder.  
 
-```python
-#QC + Assembly + Annotation + BCG Discovery
-
-#Annotation + BCG Discovery
-
-#BGC Discovery
-
-#Smart mode
-
-#Almighty god mode
-
-```
-
+If you want to run with the -as option and start from the BCG discovery, and therefore use Quasan with a custom annotation you have made, then you only need the **assembly** directory. *:warning: However, to keep things clean and tidy, I recommend you still build the rawdata directory and the assembly directory and populate them with correct files.* Place your custom annotation in at least .gbk format in a subfolder **prokka** , even if it was not prokka that generated it, and Quasan will be able to use it to call Antismash for you. *Sorry my code is not perfect !* If you don't have a custom annotation and just want to restart the antismash process, then Quasan will just use the most recent .gbk in the **prokka** subfolder for annotation made by prokka, or the **pgap** subfolder for annotation made with pgap (call Quasan with the --pgap option as well, like in Example 5 above.)
