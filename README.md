@@ -39,18 +39,18 @@ You read a few examples but still have some questions ? Then you should definite
 
 ```bash
 Mandatory arguments:
-    -s  Specify the strain you want to analyze, or the folder name where the data is stored
+ -s          Specify the strain you want to analyze, or the folder name where the data is stored
         
 Options:
--as  Start the pipeline only from the BCG Discovery step using the latest .gbk file in prokka subfolder (or pgap subfolder if you use the --pgap option)
--ia  Start the pipeline only from the Annotation step, using the latest assembly file found in MBTXX/assembly directory
--b   The busco lineage to calculate genome completeness against (default : streptomycetales_odb10)
--r   The ressources folder where to download busco information (default : "/vol/local/ressources", when ran on ILis)
--t   The number of threads to give to external tools (default : 8)
--m   The maximum amount of memory to be allocated (default : 16Gb)
--e   The estimated genome size of your strain. (default : 7.5 Mbases)
--g   The gram type of the bacteria (pos/neg). (default : pos )
--ge  The genus of the bacteria. (default : Streptomyces)
+-as          Start the pipeline only from the BCG Discovery step using the latest .gbk file in prokka subfolder (or pgap subfolder if you use the --pgap option)
+-ia          Start the pipeline only from the Annotation step, using the latest assembly file found in MBTXX/assembly directory
+-b           The busco lineage to calculate genome completeness against (default : streptomycetales_odb10)
+-r           The ressources folder where to download busco information (default : "/vol/local/ressources", when ran on ILis)
+-t           The number of threads to give to external tools (default : 8)
+-m           The maximum amount of memory to be allocated (default : 16Gb)
+-e           The estimated genome size of your strain. (default : 7.5 Mbases)
+-g           The gram type of the bacteria (pos/neg). (default : pos )
+-ge          The genus of the bacteria. (default : Streptomyces)
 --pgap       The annotation process must be ran using PGAP (/!\ It does not work with genomes with too many contigs)
 --bioproject If annotation must be submitted to the NCBI, use this option to mention the correct bioproject (default : PRJNA9999999)
 --biosample  If annotation must be submitted to the NCBI, use this option to mention the correct biosample (default : SAMN99999999)
@@ -76,7 +76,7 @@ conda install -n base -c bioconda mamba
 mamba env create -f quasan.yml
 ```
 
-An option allows Quasan to use PGAP as an annotation tool. PGAP was installed on Ilis by @Du and you can obtain more informations about the process here :  [PGAP HowTo by Du](https://gitlab.services.universiteitleiden.nl/duc/howtos/-/blob/master/Annotate%20genome%20for%20NCBI%20with%20PGAP.md "Thanks Du !").
+An option allows Quasan to use PGAP as an annotation tool. PGAP was installed on Ilis by @Du and you can obtain more informations about the process here :  [PGAP HowTo by Du](https://gitlab.services.universiteitleiden.nl/duc/howtos/-/blob/master/Annotate%20genome%20for%20NCBI%20with%20PGAP.md "Thanks Du !"). In big words, I added singularity in quasan conda env for it to be able to call PGAP. The PGAP script we use was also slighlty modified by Du.
 
 ## Pipeline overview 
 
@@ -138,6 +138,14 @@ After it ran, Quasan will create the folder structure on the right of the pictur
 
 ## Pipeline details
 
+### Versioning of analysis
+
+As you can start and restart Quasan in different ways, every file is created using today's date and the method in which it was created. Here are examples on how each fille will be named for the strain MBT42, created in the 15/02/2022 : 
+1. For PacBio assembly : V15.02.22_pacbio_flye.fasta
+2. For Illumina assembly : V15.02.22_illumina_shovill_ELS4_shovill.fa *(sorry I forgot I have added _shovill twice ! Too late now)*
+3. For hybrid assembly (PacBio + Illumina polishing ) : V15.02.22_flye_polished.fasta
+4. Annotation files use the same prefix as the assembly file, and then add "_prokka" or "_pgap" before the extension
+
 ### Quasan.log
 
 For each run, Quasan will write everything he has seen and done into its log Quasan.log. The log is created at the root of the STRAIN folder. Here is an example of Quasan's log :
@@ -194,10 +202,19 @@ For each run, Quasan will write everything he has seen and done into its log Qua
 2022-02-16 11:45:29 - INFO - ----------------------Quasan has ended  (•̀ᴗ•́)و -------------------
 ```
 
-### Quality Control rawdata
+### Quality Control
 
+- The quality control of raw reads is performed only for Illumina reads, using the tool **FASTQC**.
+- Assemblies qualities are assessed using **BUSCO** and **QUAST**
+- All results are compiled using **MULTIQC**
 
 ### Assembly
 
+- When only PacBio data are present, an assembly is generated using **FLYE**.
+- When only Illumina data are present, an assembly is generated using **SHOVILL** (a wrapper of Spades)
+- When both Illumina and PacBio data are available, first an assembly using **FLYE** will be made with PacBio reads, then this assembly will be polished with **PILON** using Illumina reads
 
 ### Annotation
+
+- By default, the annotation is generated with **PROKKA**
+- Using the --pgap option on Ilis, you can also use **PGAP** for easier upload on NCBI :warning: Does not work on genomes with too many contigs
