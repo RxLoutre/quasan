@@ -212,7 +212,7 @@ For each run, Quasan will write everything he has seen and done into its log Qua
 
 - When only PacBio data are present, an assembly is generated using **FLYE**.
 - When only Illumina data are present, an assembly is generated using **SHOVILL** (a wrapper of Spades)
-- When both Illumina and PacBio data are available, first an assembly using **FLYE** will be made with PacBio reads, then this assembly will be polished with **PILON** using Illumina reads
+- When both Illumina and PacBio data are available, first an assembly using **FLYE** will be made with PacBio reads, then this assembly will be polished with **PILON** using Illumina reads, after the reads were aligned against the PacBio only assembly using BOWTIE2
 
 ### Annotation
 
