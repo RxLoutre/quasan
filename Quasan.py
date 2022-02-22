@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
---------------- MGC/BGC module ---------------
+----------------- Authorship -----------------
 Author: Roxane Boyer
 University: Leiden University
 Department: Bioinformatics
